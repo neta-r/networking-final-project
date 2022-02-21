@@ -1,26 +1,46 @@
-available_ports = {"55000": (str, str), "55001": (str, str), "55002": (str, str), "55003": (str, str),
-                   "55004": (str, str), "55005": (str, str), "55006": (str, str), "55007": (str, str),
-                   "55008": (str, str), "55009": (str, str), "55010": (str, str), "55011": (str, str),
-                   "55012": (str, str), "55013": (str, str), "55014": (str, str), "55015": (str, str)}
+# client's Port: (client's IP, client's user name, client's connection, client's list of massages)
+from _thread import start_new_thread
+# import socket module
+from socket import *
+import sys  # In order to terminate the program
+
+num_of_threads = 0
+available_ports = {"55000": (str, str, 0, [str]), "55001": (str, str, 0, [str]), "55002": (str, str, 0, [str]),
+                   "55003": (str, str, 0, [str]), "55004": (str, str, 0, [str]), "55005": (str, str, 0, [str]),
+                   "55006": (str, str, 0, [str]), "55007": (str, str, 0, [str]), "55008": (str, str, 0, [str]),
+                   "55009": (str, str, 0, [str]), "55010": (str, str, 0, [str]), "55011": (str, str, 0, [str]),
+                   "55012": (str, str, 0, [str]), "55013": (str, str, 0, [str]), "55014": (str, str, 0, [str]),
+                   "55015": (str, str, 0, [str])}
 
 
+# connect to chat! In this point we already have a connection to the server
+def connect(name, port, ip):
+    available_ports[port][0] = ip
+    available_ports[port][1] = name
+    available_ports[port][2] = connectionSocket
+    connectionSocket.send('<connected>'.encode())
+    print(name + " connected")
+
+
+# message_send- is the massage according to protocol
+# online_users_print- will display on the screen
 def get_users():
     online_users_print = str
     online_users_send = str
-    counter = int
     for val in available_ports.values():
-        if val != ("", ""):
-            counter = counter + 1
+        if val[2] != 0:
             online_users_print += val[1] + ","
             online_users_send += "<" + str(val[1]) + ">"
 
     print(online_users_print[0:-2])
-    message_send = "<users_lst><"+counter+">"+str(online_users_send)+"<end>"
+    message_send = "<users_lst><" + str(num_of_threads) + ">" + str(online_users_send) + "<end>"
     connectionSocket.send(message_send.encode())
 
 
-def disconnect():
-    return "h"
+# we need to free the port
+def disconnect(port):
+    connectionSocket.send("<disconnected>".encode())
+    available_ports[port] = ("", "", 0, [str])
 
 
 def set_msg():
@@ -43,10 +63,11 @@ def proceed():
     return "h"
 
 
-def actions(action, rest_of_msg):
+def actions(action, rest_of_msg, port, ip):
     switcher = {
+        "connect": connect(rest_of_msg, port, ip),
         "get_users": get_users(),
-        "disconnect": disconnect(),
+        "disconnect": disconnect(port),
         "set_msg": set_msg(),
         "set_msg_all": set_msg_all(),
         "get_list_file": get_list_file(),
@@ -55,13 +76,6 @@ def actions(action, rest_of_msg):
     }
     return switcher.get(action, "Invalid action")
 
-
-# "PortNum": ("IP","userName")
-from re import match
-
-# import socket module
-from socket import *
-import sys  # In order to terminate the program
 
 # Given server port
 serverPort = 50000
@@ -77,7 +91,21 @@ serverSocket.bind(('', serverPort))
 # define at least 5 connections
 serverSocket.listen(5)
 
-# Prepare a sever socket
+
+# this function is executed whenever a thread is being activated
+def multi_threaded_client(connectionSocket, Msgs):
+    while True:
+        # receiving other messages
+        message = connectionSocket.recv(1024).decode()
+        index = message.find(">")
+        action = message[1:index - 1]
+        # sending to a switch case action and other relevant info
+        actions(action, message[index:-1], addr[1], addr[0])
+        if action == "disconnect":
+            break
+    connectionSocket.close()
+
+
 while True:
     # Establish the connection
     print('Ready to serve...')
@@ -89,43 +117,15 @@ while True:
     # checking if the port is out of bounds
     if addr[1] < 54999 or addr[1] > 55016:
         print(addr[1] + " -Not in port range")
-        # Close client socket
+        connectionSocket.close()
+
+    # checking if specific port is available
+    elif available_ports[addr[1]] != ("", "", 0, [str]):
+        print("Chosen port is unavailable")
         connectionSocket.close()
 
     else:
-        # checking if specific port is available
-        if available_ports[addr[1]] != ("", ""):
-            print("Chosen port is unavailable")
-            # Close client socket
-            connectionSocket.close()
+        start_new_thread(multi_threaded_client, (connectionSocket, ))
+        num_of_threads += 1
 
-    try:
-        connectMessage = connectionSocket.recv(1024).decode()
-        # connectMassage = "<connect><name>"
-        if connectMessage.rfind("<connect><", 0, 9):
-            # after the >< username is writen and then >
-            name = connectMessage[10:-2]
-            available_ports[addr[1]] = (addr[0], name)
-            connectionSocket.send('connected'.encode())
-            print(name + " connected")
-        else:
-            connectionSocket.send('invalidMessage'.encode())
-
-        # receiving other messages
-        message = connectionSocket.recv(1024).decode()
-        index = message.find(">")
-        action = message[1:index - 1]
-        # sending to a switch case action and other relevant info
-        actions(action, message[index:-1])
-
-        connectionSocket.close()
-    except IOError:
-
-        print("Page not found")
-        # Send response message for file not found
-        connectionSocket.send('HTTP/1.1 404 NOT FOUND \r\n\r\n'.encode())
-        # Close client socket
-        connectionSocket.close()
-
-        serverSocket.close()
-        sys.exit()  # Terminate the program after sending the corresponding data
+# TODO: if the user name is taken please choose another one
