@@ -1,25 +1,31 @@
-# client's Port: (client's IP, client's user name, client's connection, client's list of massages)
 from _thread import start_new_thread
 # import socket module
 from socket import *
 import sys  # In order to terminate the program
 
 num_of_threads = 0
-available_ports = {"55000": (str, str, 0, [str]), "55001": (str, str, 0, [str]), "55002": (str, str, 0, [str]),
-                   "55003": (str, str, 0, [str]), "55004": (str, str, 0, [str]), "55005": (str, str, 0, [str]),
-                   "55006": (str, str, 0, [str]), "55007": (str, str, 0, [str]), "55008": (str, str, 0, [str]),
-                   "55009": (str, str, 0, [str]), "55010": (str, str, 0, [str]), "55011": (str, str, 0, [str]),
-                   "55012": (str, str, 0, [str]), "55013": (str, str, 0, [str]), "55014": (str, str, 0, [str]),
-                   "55015": (str, str, 0, [str])}
+
+# client's Port: (is available, client's user name)
+available_ports = {"55000": (False, str), "55001": (False, str), "55002": (False, str),
+                   "55003": (False, str), "55004": (False, str), "55005": (False, str),
+                   "55006": (False, str), "55007": (False, str), "55008": (False, str),
+                   "55009": (False, str), "55010": (False, str), "55011": (False, str),
+                   "55012": (False, str), "55013": (False, str), "55014": (False, str),
+                   "55015": (False, str)}
+
+# name: (ip, port, connection, [msg1, msg2,..])
+users = {}
 
 
 # connect to chat! In this point we already have a connection to the server
 def connect(name, port, ip):
-    available_ports[port][0] = ip
-    available_ports[port][1] = name
-    available_ports[port][2] = connectionSocket
-    connectionSocket.send('<connected>'.encode())
-    print(name + " connected")
+    if name not in users:
+        available_ports[port][1] = name
+        users[name] = (ip, port, connectionSocket, str)
+        connectionSocket.send('<connected>'.encode())
+        print(name + " connected")
+    else:
+        connectionSocket.send('<available_name>'.encode())
 
 
 # message_send- is the massage according to protocol
@@ -27,7 +33,7 @@ def connect(name, port, ip):
 def get_users():
     online_users_print = str
     online_users_send = str
-    for val in available_ports.values():
+    for val in users.values():
         if val[2] != 0:
             online_users_print += val[1] + ","
             online_users_send += "<" + str(val[1]) + ">"
@@ -39,16 +45,30 @@ def get_users():
 
 # we need to free the port
 def disconnect(port):
+    available_ports[port] = (False, "")
+    del users[available_ports[port][1]]
     connectionSocket.send("<disconnected>".encode())
-    available_ports[port] = ("", "", 0, [str])
 
 
-def set_msg():
-    return "h"
+def set_msg(rest_of_msg, port, ip):
+    # rest_of_msg="name><msg>"
+    index = rest_of_msg.find(">")
+    name = rest_of_msg[0:index - 1]
+    msg = rest_of_msg[index + 2:-1]
+    other_client_socket = users[name][2]
+    my_name = available_ports[port][1]
+    send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
+    other_client_socket.send(send_to_client.encode())
+    users[name][3] += "," + msg
 
 
-def set_msg_all():
-    return "h"
+def set_msg_all(msg, port):
+    # msg = "msg>"
+    my_name = available_ports[port][1]
+    for key, val in users.items():
+        if key is not my_name:
+            other_client_socket = users[key][2]
+            other_client_socket.send(msg.encode())
 
 
 def get_list_file():
@@ -68,8 +88,8 @@ def actions(action, rest_of_msg, port, ip):
         "connect": connect(rest_of_msg, port, ip),
         "get_users": get_users(),
         "disconnect": disconnect(port),
-        "set_msg": set_msg(),
-        "set_msg_all": set_msg_all(),
+        "set_msg": set_msg(rest_of_msg, port, ip),
+        "set_msg_all": set_msg_all(rest_of_msg, port),
         "get_list_file": get_list_file(),
         "download": download(),
         "proceed": proceed()
@@ -93,14 +113,14 @@ serverSocket.listen(5)
 
 
 # this function is executed whenever a thread is being activated
-def multi_threaded_client(connectionSocket, Msgs):
+def multi_threaded_client(connectionSocket):
     while True:
         # receiving other messages
         message = connectionSocket.recv(1024).decode()
         index = message.find(">")
         action = message[1:index - 1]
         # sending to a switch case action and other relevant info
-        actions(action, message[index:-1], addr[1], addr[0])
+        actions(action, message[index + 2:-1], addr[1], addr[0])
         if action == "disconnect":
             break
     connectionSocket.close()
@@ -120,12 +140,11 @@ while True:
         connectionSocket.close()
 
     # checking if specific port is available
-    elif available_ports[addr[1]] != ("", "", 0, [str]):
+    elif available_ports[addr[1]][0] is True:
         print("Chosen port is unavailable")
         connectionSocket.close()
 
     else:
-        start_new_thread(multi_threaded_client, (connectionSocket, ))
+        available_ports[addr[1]][0] = False
+        start_new_thread(multi_threaded_client, (connectionSocket,))
         num_of_threads += 1
-
-# TODO: if the user name is taken please choose another one
