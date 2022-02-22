@@ -31,14 +31,14 @@ def connect(name, port, ip):
 # message_send- is the massage according to protocol
 # online_users_print- will display on the screen
 def get_users():
-    online_users_print = str
-    online_users_send = str
-    for val in users.values():
+    online_users_print = ""
+    online_users_send = ""
+    for key,val in users.items():
         if val[2] != 0:
-            online_users_print = str(online_users_print) + str(val[1]) + ","
-            online_users_send = str(online_users_send) + "<" + str(val[1]) + ">"
+            online_users_print = online_users_print + str(key) + ","
+            online_users_send = online_users_send + "<" + str(key) + ">"
 
-    print(online_users_print[0:-2])
+    print("online users: " + online_users_print[0:-1])
     message_send = "<users_lst><" + str(num_of_threads) + ">" + str(online_users_send) + "<end>"
     connectionSocket.send(message_send.encode())
 
@@ -89,17 +89,26 @@ def proceed():
 
 
 def actions(action, rest_of_msg, port, ip):
-    switcher = {
-        "connect": connect(rest_of_msg, port, ip),
-        "get_users": get_users(),
-        "disconnect": disconnect(port),
-        "set_msg": set_msg(rest_of_msg, port, ip),
-        "set_msg_all": set_msg_all(rest_of_msg, port),
-        "get_list_file": get_list_file(),
-        "download": download(),
-        "proceed": proceed()
-    }
-    return switcher.get(action, "Invalid action")
+    if action == "connect":
+        connect(rest_of_msg, port, ip)
+    elif action == "get_users":
+        get_users()
+    elif action == "disconnect":
+        disconnect(port)
+    elif action == "disconnect":
+        disconnect(port)
+    elif action == "set_msg":
+        set_msg(rest_of_msg, port, ip)
+    elif action == "set_msg_all":
+        set_msg_all(rest_of_msg, port)
+    elif action == "get_list_file":
+        get_list_file()
+    elif action == "download":
+        download()
+    elif action == "proceed":
+        proceed()
+    else:
+        return "Invalid action"
 
 
 # Given server port
