@@ -103,21 +103,21 @@ while True:
         break
     elif feedback == "<available_name>":
         print("User name is taken!\n")
-#
-# while True:
-#     print("Action menu: \n")
-#     print("1- get users list\n")
-#     print("2- disconnect\n")
-#     print("3- send private message\n")
-#     print("4- send message to all online users\n")
-#     print("5- get list of files\n")
-#     print("6- download file\n")
-#     print("7- proceed\n")
-#     action = input("Please select action: ")
-#     if int(action) < 1 or int(action) > 7:
-#         print("Please choose number between 1 to 7\n")
-#     else:
-#         actions(action)
-#         if action == 2:
-#             break
-# clientSocket.close()
+
+while True:
+    print("Action menu: \n")
+    print("1- get users list\n")
+    print("2- disconnect\n")
+    print("3- send private message\n")
+    print("4- send message to all online users\n")
+    print("5- get list of files\n")
+    print("6- download file\n")
+    print("7- proceed\n")
+    action = input("Please select action: ")
+    if int(action) < 1 or int(action) > 7:
+        print("Please choose number between 1 to 7\n")
+    else:
+        actions(action)
+        if action == 2:
+            break
+clientSocket.close()

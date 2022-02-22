@@ -6,14 +6,14 @@ import sys  # In order to terminate the program
 num_of_threads = 0
 
 # client's Port: (is available, client's user name)
-available_ports = {"55000": (False, str), "55001": (False, str), "55002": (False, str),
-                   "55003": (False, str), "55004": (False, str), "55005": (False, str),
-                   "55006": (False, str), "55007": (False, str), "55008": (False, str),
-                   "55009": (False, str), "55010": (False, str), "55011": (False, str),
-                   "55012": (False, str), "55013": (False, str), "55014": (False, str),
-                   "55015": (False, str)}
+available_ports = {"55000": [False, str], "55001": [False, str], "55002": [False, str],
+                   "55003": [False, str], "55004": [False, str], "55005": [False, str],
+                   "55006": [False, str], "55007": [False, str], "55008": [False, str],
+                   "55009": [False, str], "55010": [False, str], "55011": [False, str],
+                   "55012": [False, str], "55013": [False, str], "55014": [False, str],
+                   "55015": [False, str]}
 
-# name: (ip, port, connection, [msg1, msg2,..])
+# name: [ip, port, connection, [msg1, msg2,..]]
 users = {}
 
 
@@ -21,7 +21,7 @@ users = {}
 def connect(name, port, ip):
     if name not in users:
         available_ports[port][1] = name
-        users[name] = (ip, port, connectionSocket, str)
+        users[name] = [ip, port, connectionSocket, str]
         connectionSocket.send('<connected>'.encode())
         print(name + " connected")
     else:
@@ -140,19 +140,19 @@ while True:
     connectionSocket, addr = serverSocket.accept()
 
     # checking if the port is out of bounds
-    if addr[1] < 54999 or addr[1] > 55016:
+    if addr[1] < 55000 or addr[1] > 55015:
         print(addr[1] + " -Not in port range")
         connectionSocket.send("<port_out_of_range>".encode())
         connectionSocket.close()
 
-    # # checking if specific port is available
-    # elif available_ports[addr[1]][0] is True:
-    #     print("Chosen port is unavailable")
-    #     connectionSocket.send("<port_unavailable>".encode())
-    #     connectionSocket.close()
+    # checking if specific port is available
+    elif available_ports[str(addr[1])][0] is True:
+        print("Chosen port is unavailable")
+        connectionSocket.send("<port_unavailable>".encode())
+        connectionSocket.close()
 
     else:
         connectionSocket.send("<connection_established>".encode())
-        available_ports[addr[1]][0] = False
+        available_ports[str(addr[1])][0] = False
         start_new_thread(multi_threaded_client, (connectionSocket,))
         num_of_threads += 1
