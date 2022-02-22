@@ -55,11 +55,15 @@ def set_msg(rest_of_msg, port, ip):
     index = rest_of_msg.find(">")
     name = rest_of_msg[0:index - 1]
     msg = rest_of_msg[index + 2:-1]
-    other_client_socket = users[name][2]
-    my_name = available_ports[port][1]
-    send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
-    other_client_socket.send(send_to_client.encode())
-    users[name][3] += "," + msg
+    if name in users:
+        other_client_socket = users[name][2]
+        my_name = available_ports[port][1]
+        send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
+        other_client_socket.send(send_to_client.encode())
+        users[name][3] += "," + msg
+        connectionSocket.send("<msg_sent>".encode())
+    else:
+        connectionSocket.send("<invalid_name>".encode())
 
 
 def set_msg_all(msg, port):
@@ -69,6 +73,7 @@ def set_msg_all(msg, port):
         if key is not my_name:
             other_client_socket = users[key][2]
             other_client_socket.send(msg.encode())
+    connectionSocket.send("<msg_sent>".encode())
 
 
 def get_list_file():
@@ -137,14 +142,17 @@ while True:
     # checking if the port is out of bounds
     if addr[1] < 54999 or addr[1] > 55016:
         print(addr[1] + " -Not in port range")
+        connectionSocket.send("<port_out_of_range>".encode())
         connectionSocket.close()
 
     # checking if specific port is available
     elif available_ports[addr[1]][0] is True:
         print("Chosen port is unavailable")
+        connectionSocket.send("<port_unavailable>".encode())
         connectionSocket.close()
 
     else:
+        connectionSocket.send("<connection_established>".encode())
         available_ports[addr[1]][0] = False
         start_new_thread(multi_threaded_client, (connectionSocket,))
         num_of_threads += 1
