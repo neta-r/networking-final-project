@@ -20,7 +20,7 @@ users = {}
 # connect to chat! In this point we already have a connection to the server
 def connect(name, port, ip):
     if name not in users:
-        available_ports[port][1] = name
+        available_ports[str(port)][1] = name
         users[name] = [ip, port, connectionSocket, str]
         connectionSocket.send('<connected>'.encode())
         print(name + " connected")
@@ -35,8 +35,8 @@ def get_users():
     online_users_send = str
     for val in users.values():
         if val[2] != 0:
-            online_users_print += val[1] + ","
-            online_users_send += "<" + str(val[1]) + ">"
+            online_users_print = str(online_users_print) + str(val[1]) + ","
+            online_users_send = str(online_users_send) + "<" + str(val[1]) + ">"
 
     print(online_users_print[0:-2])
     message_send = "<users_lst><" + str(num_of_threads) + ">" + str(online_users_send) + "<end>"
@@ -123,7 +123,7 @@ def multi_threaded_client(connectionSocket):
         # receiving other messages
         message = connectionSocket.recv(1024).decode()
         index = message.find(">")
-        action = message[1:index - 1]
+        action = message[1:index]
         # sending to a switch case action and other relevant info
         actions(action, message[index + 2:-1], addr[1], addr[0])
         if action == "disconnect":
@@ -140,8 +140,8 @@ while True:
     connectionSocket, addr = serverSocket.accept()
 
     # checking if the port is out of bounds
-    if addr[1] < 55000 or addr[1] > 55015:
-        print(addr[1] + " -Not in port range")
+    if addr[1] < 55000 or addr[1] > 55016:
+        print(str(addr[1]) + " -Not in port range")
         connectionSocket.send("<port_out_of_range>".encode())
         connectionSocket.close()
 
