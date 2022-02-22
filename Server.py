@@ -145,11 +145,11 @@ while True:
         connectionSocket.send("<port_out_of_range>".encode())
         connectionSocket.close()
 
-    # checking if specific port is available
-    elif available_ports[addr[1]][0] is True:
-        print("Chosen port is unavailable")
-        connectionSocket.send("<port_unavailable>".encode())
-        connectionSocket.close()
+    # # checking if specific port is available
+    # elif available_ports[addr[1]][0] is True:
+    #     print("Chosen port is unavailable")
+    #     connectionSocket.send("<port_unavailable>".encode())
+    #     connectionSocket.close()
 
     else:
         connectionSocket.send("<connection_established>".encode())

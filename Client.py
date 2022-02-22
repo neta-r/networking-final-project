@@ -2,7 +2,8 @@
 from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
-serverName = 'localhost'
+# TODO: figure out why we have to put specific ip instead of 'localhost'!
+serverName = '10.80.4.238'
 
 
 def get_users():
@@ -26,7 +27,7 @@ def get_users():
 def disconnect():
     clientSocket.send("<disconnect>".encode())
     server_feedback = clientSocket.recv(1024).decode()
-    if server_feedback is "<disconnected>":
+    if server_feedback == "<disconnected>":
         print("Successfully disconnected\n")
 
 
@@ -36,9 +37,9 @@ def set_msg():
     set_msg_request = "<set_msg><" + other_user + "><" + msg + ">"
     clientSocket.send(set_msg_request.encode())
     server_feedback = clientSocket.recv(1024).decode()
-    if server_feedback is "<msg_sent>":
+    if server_feedback == "<msg_sent>":
         print("Message sent successfully!\n")
-    elif server_feedback is "<invalid_name>":
+    elif server_feedback == "<invalid_name>":
         print("The name you chose is not in the chatroom!\n")
 
 
@@ -47,7 +48,7 @@ def set_msg_all():
     set_msg_all_request = "<set_msg><" + msg + ">"
     clientSocket.send(set_msg_all_request.encode())
     server_feedback = clientSocket.recv(1024).decode()
-    if server_feedback is "<msg_sent>":
+    if server_feedback == "<msg_sent>":
         print("Message sent successfully!\n")
 
 
@@ -77,17 +78,18 @@ def actions(action):
 
 
 while True:
-    serverPort = input("Enter port number between 55000 to 55015: ")
-    SERVER_ADDRESS = (serverName, serverPort)
+    clientPort = input("Enter port number between 55000 to 55015: ")
+    SERVER_ADDRESS = (serverName, 50000)
     clientSocket = socket(AF_INET, SOCK_STREAM)
+    clientSocket.bind(('0.0.0.0', int(clientPort)))
     clientSocket.connect(SERVER_ADDRESS)
     feedback = clientSocket.recv(1024).decode()
-    if feedback is "<connection_established>":
+    if feedback == "<connection_established>":
         print("connection established\n")
         break
-    elif feedback is "<port_out_of_range>":
+    elif feedback == "<port_out_of_range>":
         print("Port out of range!\n")
-    elif feedback is "<port_unavailable>":
+    elif feedback == "<port_unavailable>":
         print("Chosen port is taken! Please select another one\n")
 
 while True:
@@ -96,26 +98,26 @@ while True:
     # clientSocket.send(bytes(sentence, encoding="UTF-8"))
     clientSocket.send(connect_request.encode())
     feedback = clientSocket.recv(1024).decode()
-    if feedback is "<connected>":
+    if feedback == "<connected>":
         print("Thank you!\n")
         break
-    elif feedback is "<available_name>":
+    elif feedback == "<available_name>":
         print("User name is taken!\n")
-
-while True:
-    print("Action menu: \n")
-    print("1- get users list\n")
-    print("2- disconnect\n")
-    print("3- send private message\n")
-    print("4- send message to all online users\n")
-    print("5- get list of files\n")
-    print("6- download file\n")
-    print("7- proceed\n")
-    action = input("Please select action: ")
-    if int(action) < 1 or int(action) > 7:
-        print("Please choose number between 1 to 7\n")
-    else:
-        actions(action)
-        if action is 2:
-            break
-clientSocket.close()
+#
+# while True:
+#     print("Action menu: \n")
+#     print("1- get users list\n")
+#     print("2- disconnect\n")
+#     print("3- send private message\n")
+#     print("4- send message to all online users\n")
+#     print("5- get list of files\n")
+#     print("6- download file\n")
+#     print("7- proceed\n")
+#     action = input("Please select action: ")
+#     if int(action) < 1 or int(action) > 7:
+#         print("Please choose number between 1 to 7\n")
+#     else:
+#         actions(action)
+#         if action == 2:
+#             break
+# clientSocket.close()
