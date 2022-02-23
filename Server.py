@@ -95,8 +95,6 @@ def actions(action, rest_of_msg, port, ip):
         get_users()
     elif action == "disconnect":
         disconnect(port)
-    elif action == "disconnect":
-        disconnect(port)
     elif action == "set_msg":
         set_msg(rest_of_msg, port, ip)
     elif action == "set_msg_all":
