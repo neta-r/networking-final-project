@@ -125,6 +125,8 @@ serverSocket.bind(('', serverPort))
 # define at least 5 connections
 serverSocket.listen(5)
 
+print("Ready to serve!")
+
 
 # this function is executed whenever a thread is being activated
 def multi_threaded_client(connectionSocket):
@@ -141,27 +143,10 @@ def multi_threaded_client(connectionSocket):
 
 
 while True:
-    # Establish the connection
-    print('Ready to serve...')
-
     # connectionSocket is the socket after the connection has been accepted
     # addr[0]= client's ip, addr[1]= client's port
     connectionSocket, addr = serverSocket.accept()
-
-    # checking if the port is out of bounds
-    if addr[1] < 55000 or addr[1] > 55016:
-        print(str(addr[1]) + " -Not in port range")
-        connectionSocket.send("<port_out_of_range>".encode())
-        connectionSocket.close()
-
-    # checking if specific port is available
-    elif available_ports[str(addr[1])][0] is True:
-        print("Chosen port is unavailable")
-        connectionSocket.send("<port_unavailable>".encode())
-        connectionSocket.close()
-
-    else:
-        connectionSocket.send("<connection_established>".encode())
-        available_ports[str(addr[1])][0] = False
-        start_new_thread(multi_threaded_client, (connectionSocket,))
-        num_of_threads += 1
+    connectionSocket.send("<connection_established>".encode())
+    available_ports[str(addr[1])][0] = True
+    start_new_thread(multi_threaded_client, (connectionSocket,))
+    num_of_threads += 1

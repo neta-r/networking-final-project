@@ -3,7 +3,7 @@ from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
 # TODO: figure out why we have to put specific ip instead of 'localhost'!
-serverName = '10.80.4.238'
+serverName = '192.168.1.29'
 
 
 def get_users():
@@ -20,7 +20,7 @@ def get_users():
     for _ in range[0:num_of_msg]:
         index = server_feedback.find(">")
         msg = server_feedback[0:index - 1]
-        print(msg+"\n")
+        print(msg + "\n")
         server_feedback = server_feedback[index + 1:-1]
 
 
@@ -79,18 +79,25 @@ def actions(action):
 
 while True:
     clientPort = input("Enter port number between 55000 to 55015: ")
-    SERVER_ADDRESS = (serverName, 50000)
-    clientSocket = socket(AF_INET, SOCK_STREAM)
-    clientSocket.bind(('0.0.0.0', int(clientPort)))
-    clientSocket.connect(SERVER_ADDRESS)
-    feedback = clientSocket.recv(1024).decode()
-    if feedback == "<connection_established>":
-        print("connection established\n")
-        break
-    elif feedback == "<port_out_of_range>":
+    # checking if the port is out of bounds
+    if 55000 <= int(clientPort) <= 55016:
+        # checking if specific port is available
+        try:
+            SERVER_ADDRESS = (serverName, 50000)
+            clientSocket = socket(AF_INET, SOCK_STREAM)
+            clientSocket.bind(('0.0.0.0', int(clientPort)))
+            clientSocket.connect(SERVER_ADDRESS)
+            feedback = clientSocket.recv(1024).decode()
+            if feedback == "<connection_established>":
+                print("connection established\n")
+                break
+        except OSError as e:
+            # error number 10048 = Port is taken,
+            # Only one usage of each socket address is normally permitted
+            if e.errno == 10048:
+                print("Port is unavailable, Please try another one!")
+    else:
         print("Port out of range!\n")
-    elif feedback == "<port_unavailable>":
-        print("Chosen port is taken! Please select another one\n")
 
 while True:
     username = input("Input username: ")
