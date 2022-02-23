@@ -10,18 +10,18 @@ def get_users():
     clientSocket.send("<get_users>".encode())
     server_feedback = clientSocket.recv(1024).decode()
     # server_feedback = "<users_list><num_of_users><msg1><msg2>...<end>
-    server_feedback = server_feedback[12:-1]
+    server_feedback = server_feedback[12:]
     # server_feedback = "num_of_users><msg1><msg2>...<end>
     index = server_feedback.find(">")
     num_of_usr = server_feedback[0:index]
     print("Number of users connected: " + num_of_usr + "\nthe users:")
-    server_feedback = server_feedback[index + 2:-1]
-    # server_feedback = "msg1><msg2>...<end>
+    server_feedback = server_feedback[index + 1:]
+    # server_feedback = "<usr1><usr2>...<end>
     for _ in range(int(num_of_usr)):
         index = server_feedback.find(">")
-        user = server_feedback[0:index]
+        user = server_feedback[1:index]
         print(user + "\n")
-        server_feedback = server_feedback[index + 1:-1]
+        server_feedback = server_feedback[index + 1:]
 
 
 def disconnect():
@@ -146,3 +146,6 @@ while True:
         print("Please enter numeric value!\n")
 clientSocket.close()
 
+# TODO: להוסיף אופציה לראות את כל ההודעות ששלחו לי
+# TODO: לתקן את disconnect
+# TODO: לנסות להעיף את הדיקשונרי של הפורטים מהשרת ניראלי לא צריך אותו
