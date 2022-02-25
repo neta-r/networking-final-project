@@ -3,7 +3,7 @@ from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
 # TODO: figure out why we have to put specific ip instead of 'localhost'!
-serverName = '192.168.1.29'
+serverName = '10.100.102.8'
 
 
 def get_users():
@@ -52,6 +52,10 @@ def set_msg_all():
         print("Message sent successfully!\n")
 
 
+def show_msg():
+    return "h"
+
+
 def get_list_file():
     return "h"
 
@@ -74,10 +78,12 @@ def actions(action):
     elif action == 4:
         set_msg_all()
     elif action == 5:
-        get_list_file()
+        show_msg()
     elif action == 6:
-        download()
+        get_list_file()
     elif action == 7:
+        download()
+    elif action == 8:
         proceed()
     else:
         return "Invalid action"
@@ -129,23 +135,21 @@ while True:
     print("2- disconnect\n")
     print("3- send private message\n")
     print("4- send message to all online users\n")
-    print("5- get list of files\n")
-    print("6- download file\n")
-    print("7- proceed\n")
+    print("5- show all  messages\n")
+    print("6- get list of files\n")
+    print("7- download file\n")
+    print("8- proceed\n")
     clientInput = input("Please select action: ")
     # checking if input is a number
     try:
         action = int(clientInput)
-        if int(action) < 1 or int(action) > 7:
-            print("Please choose number between 1 to 7\n")
+        if int(action) < 1 or int(action) > 8:
+            print("Please choose number between 1 to 8\n")
         else:
             actions(action)
+            # if action is disconnect close socket
             if action == 2:
                 break
     except ValueError:
         print("Please enter numeric value!\n")
 clientSocket.close()
-
-# TODO: להוסיף אופציה לראות את כל ההודעות ששלחו לי
-# TODO: לתקן את disconnect
-# TODO: לנסות להעיף את הדיקשונרי של הפורטים מהשרת ניראלי לא צריך אותו

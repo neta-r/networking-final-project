@@ -5,13 +5,10 @@ import sys  # In order to terminate the program
 
 num_of_threads = 0
 
-# client's Port: (is available, client's user name)
-available_ports = {"55000": [False, str], "55001": [False, str], "55002": [False, str],
-                   "55003": [False, str], "55004": [False, str], "55005": [False, str],
-                   "55006": [False, str], "55007": [False, str], "55008": [False, str],
-                   "55009": [False, str], "55010": [False, str], "55011": [False, str],
-                   "55012": [False, str], "55013": [False, str], "55014": [False, str],
-                   "55015": [False, str]}
+# client's Port: user's name
+names = {55000: str, 55001: str, 55002: str, 55003: str, 55004: str, 55005: str,
+         55006: str, 55007: str, 55008: str,  55009: str, 55010: str, 55011: str,
+         55012: str, 55013: str, 55014: str, 55015: str}
 
 # name: [ip, port, connection, [msg1, msg2,..]]
 users = {}
@@ -20,7 +17,7 @@ users = {}
 # connect to chat! In this point we already have a connection to the server
 def connect(name, port, ip):
     if name not in users:
-        available_ports[str(port)][1] = name
+        names[port] = name
         users[name] = [ip, port, connectionSocket, str]
         connectionSocket.send('<connected>'.encode())
         print(name + " connected")
@@ -33,7 +30,7 @@ def connect(name, port, ip):
 def get_users():
     online_users_print = ""
     online_users_send = ""
-    for key,val in users.items():
+    for key, val in users.items():
         if val[2] != 0:
             online_users_print = online_users_print + str(key) + ","
             online_users_send = online_users_send + "<" + str(key) + ">"
@@ -45,9 +42,12 @@ def get_users():
 
 # we need to free the port
 def disconnect(port):
-    available_ports[port] = (False, "")
-    del users[available_ports[port][1]]
+    name = names[port]
+    users.pop(names[port])
+    # del users[names[port]]
+    names[port] = str
     connectionSocket.send("<disconnected>".encode())
+    print(name + ' left chat')
 
 
 def set_msg(rest_of_msg, port, ip):
@@ -57,7 +57,7 @@ def set_msg(rest_of_msg, port, ip):
     msg = rest_of_msg[index + 2:-1]
     if name in users:
         other_client_socket = users[name][2]
-        my_name = available_ports[port][1]
+        my_name = names[port]
         send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
         other_client_socket.send(send_to_client.encode())
         users[name][3] += "," + msg
@@ -68,7 +68,7 @@ def set_msg(rest_of_msg, port, ip):
 
 def set_msg_all(msg, port):
     # msg = "msg>"
-    my_name = available_ports[port][1]
+    my_name = names[port]
     for key, val in users.items():
         if key is not my_name:
             other_client_socket = users[key][2]
@@ -145,7 +145,5 @@ while True:
     # addr[0]= client's ip, addr[1]= client's port
     connectionSocket, addr = serverSocket.accept()
     connectionSocket.send("<connection_established>".encode())
-    available_ports[str(addr[1])][0] = True
     start_new_thread(multi_threaded_client, (connectionSocket,))
     num_of_threads += 1
-
