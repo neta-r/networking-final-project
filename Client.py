@@ -9,9 +9,9 @@ serverName = '10.100.102.8'
 def get_users():
     clientSocket.send("<get_users>".encode())
     server_feedback = clientSocket.recv(1024).decode()
-    # server_feedback = "<users_list><num_of_users><msg1><msg2>...<end>
+    # server_feedback = "<users_list><num_of_users><user1><user2>...<end>
     server_feedback = server_feedback[12:]
-    # server_feedback = "num_of_users><msg1><msg2>...<end>
+    # server_feedback = "num_of_users><user1><user2>...<end>
     index = server_feedback.find(">")
     num_of_usr = server_feedback[0:index]
     print("Number of users connected: " + num_of_usr + "\nthe users:")
@@ -52,8 +52,22 @@ def set_msg_all():
         print("Message sent successfully!\n")
 
 
-def show_msg():
-    return "h"
+def show_all_msg():
+    clientSocket.send("<show_all_msgs>".encode())
+    server_feedback = clientSocket.recv(1024).decode()
+    # server_feedback = "<msg_lst><num_of_msgs><msg1><msg2>...<end>"
+    server_feedback = server_feedback[10:]
+    # server_feedback = "num_of_msgs><msg1><msg2>...<end>"
+    index = server_feedback.find(">")
+    num_of_msgs = server_feedback[0:index]
+    print("Number of users connected: " + num_of_msgs + "\nthe messages are:")
+    server_feedback = server_feedback[index + 1:]
+    # server_feedback = "<msg1><msg2>...<end>
+    for _ in range(int(num_of_msgs)):
+        index = server_feedback.find(">")
+        msg = server_feedback[1:index]
+        print(msg + "\n")
+        server_feedback = server_feedback[index + 1:]
 
 
 def get_list_file():
@@ -78,7 +92,7 @@ def actions(action):
     elif action == 4:
         set_msg_all()
     elif action == 5:
-        show_msg()
+        show_all_msg()
     elif action == 6:
         get_list_file()
     elif action == 7:
@@ -135,7 +149,7 @@ while True:
     print("2- disconnect\n")
     print("3- send private message\n")
     print("4- send message to all online users\n")
-    print("5- show all  messages\n")
+    print("5- show all messages\n")
     print("6- get list of files\n")
     print("7- download file\n")
     print("8- proceed\n")

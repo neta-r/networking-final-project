@@ -7,10 +7,10 @@ num_of_threads = 0
 
 # client's Port: user's name
 names = {55000: str, 55001: str, 55002: str, 55003: str, 55004: str, 55005: str,
-         55006: str, 55007: str, 55008: str,  55009: str, 55010: str, 55011: str,
+         55006: str, 55007: str, 55008: str, 55009: str, 55010: str, 55011: str,
          55012: str, 55013: str, 55014: str, 55015: str}
 
-# name: [ip, port, connection, [msg1, msg2,..]]
+# name: [ip, port, connection, "neta:hi, reut:hi, neta:how you doing, ... "]
 users = {}
 
 
@@ -18,7 +18,7 @@ users = {}
 def connect(name, port, ip):
     if name not in users:
         names[port] = name
-        users[name] = [ip, port, connectionSocket, str]
+        users[name] = [ip, port, connectionSocket, ""]
         connectionSocket.send('<connected>'.encode())
         print(name + " connected")
     else:
@@ -51,16 +51,18 @@ def disconnect(port):
 
 
 def set_msg(rest_of_msg, port, ip):
+    # TODO: לא לתת לשלוח הודעה לעצמנו
+    # TODO: לבדוק שהיוזר שרוצים לשלוח לו קיים
     # rest_of_msg="name><msg>"
     index = rest_of_msg.find(">")
-    name = rest_of_msg[0:index - 1]
-    msg = rest_of_msg[index + 2:-1]
+    name = rest_of_msg[0:index]
+    msg = rest_of_msg[index + 2:]
     if name in users:
         other_client_socket = users[name][2]
         my_name = names[port]
         send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
         other_client_socket.send(send_to_client.encode())
-        users[name][3] += "," + msg
+        users[name][3] += my_name + ":" + msg + ","
         connectionSocket.send("<msg_sent>".encode())
     else:
         connectionSocket.send("<invalid_name>".encode())
@@ -72,8 +74,21 @@ def set_msg_all(msg, port):
     for key, val in users.items():
         if key is not my_name:
             other_client_socket = users[key][2]
+            users[key][3] += my_name + ":" + msg + ","
             other_client_socket.send(msg.encode())
     connectionSocket.send("<msg_sent>".encode())
+
+
+def show_all_msg(port):
+    if port == 55015:
+        users['neta'][3] = ['hi', '']
+    name = names[port]
+    msgs = users[name][3]
+    send = "<msg_lst><" + str(len(msgs)) + ">"
+    for msg in msgs:
+        send += "<" + msg + ">"
+    send += "<end>"
+    connectionSocket.send(send.encode())
 
 
 def get_list_file():
@@ -99,6 +114,8 @@ def actions(action, rest_of_msg, port, ip):
         set_msg(rest_of_msg, port, ip)
     elif action == "set_msg_all":
         set_msg_all(rest_of_msg, port)
+    elif action == "show_all_msg":
+        show_all_msg(port)
     elif action == "get_list_file":
         get_list_file()
     elif action == "download":
