@@ -51,21 +51,22 @@ def disconnect(port):
 
 
 def set_msg(rest_of_msg, port, ip):
-    # TODO: לא לתת לשלוח הודעה לעצמנו
-    # TODO: לבדוק שהיוזר שרוצים לשלוח לו קיים
+    my_name = names[port]
     # rest_of_msg="name><msg>"
     index = rest_of_msg.find(">")
     name = rest_of_msg[0:index]
     msg = rest_of_msg[index + 2:]
-    if name in users:
-        other_client_socket = users[name][2]
-        my_name = names[port]
-        send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
-        other_client_socket.send(send_to_client.encode())
-        users[name][3] += my_name + ":" + msg + ","
-        connectionSocket.send("<msg_sent>".encode())
+    if name == my_name:
+        connectionSocket.send("<message_to_yourself>".encode())
     else:
-        connectionSocket.send("<invalid_name>".encode())
+        if name in users:
+            other_client_socket = users[name][2]
+            send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
+            other_client_socket.send(send_to_client.encode())
+            users[name][3] += my_name + ":" + msg + ","
+            connectionSocket.send("<msg_sent>".encode())
+        else:
+            connectionSocket.send("<invalid_name>".encode())
 
 
 def set_msg_all(msg, port):
@@ -80,15 +81,20 @@ def set_msg_all(msg, port):
 
 
 def show_all_msg(port):
-    if port == 55015:
-        users['neta'][3] = ['hi', '']
-    name = names[port]
-    msgs = users[name][3]
-    send = "<msg_lst><" + str(len(msgs)) + ">"
-    for msg in msgs:
-        send += "<" + msg + ">"
-    send += "<end>"
-    connectionSocket.send(send.encode())
+    my_name = names[port]
+    msgs = users[my_name][3]
+    if msgs != "":
+        msgs_and_users = msgs.split(',')
+        num_of_msgs = len(msgs_and_users) - 1
+        send = "<msg_lst><" + str(num_of_msgs) + ">"
+        for arr in msgs_and_users:
+            if arr != "":
+                user_name, user_msg = arr.split(':')
+                send += "<" + user_name + ":" + user_msg + ">"
+        send += "<end>"
+        connectionSocket.send(send.encode())
+    else:
+        connectionSocket.send("<no_msgs>".encode())
 
 
 def get_list_file():
@@ -114,7 +120,7 @@ def actions(action, rest_of_msg, port, ip):
         set_msg(rest_of_msg, port, ip)
     elif action == "set_msg_all":
         set_msg_all(rest_of_msg, port)
-    elif action == "show_all_msg":
+    elif action == "show_all_msgs":
         show_all_msg(port)
     elif action == "get_list_file":
         get_list_file()

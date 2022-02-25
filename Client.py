@@ -37,37 +37,45 @@ def set_msg():
     set_msg_request = "<set_msg><" + other_user + "><" + msg + ">"
     clientSocket.send(set_msg_request.encode())
     server_feedback = clientSocket.recv(1024).decode()
-    if server_feedback == "<msg_sent>":
-        print("Message sent successfully!\n")
-    elif server_feedback == "<invalid_name>":
-        print("The name you chose is not in the chatroom!\n")
+    if server_feedback == "<message_to_yourself>":
+        print("You can't send a message to yourself\n")
+    else:
+        if server_feedback == "<msg_sent>":
+            print("Message sent successfully!\n")
+            print("Me:"+msg)
+        elif server_feedback == "<invalid_name>":
+            print("The name you chose is not in the chatroom!\n")
 
 
 def set_msg_all():
     msg = input("Input message: ")
-    set_msg_all_request = "<set_msg><" + msg + ">"
+    set_msg_all_request = "<set_msg_all><" + msg + ">"
     clientSocket.send(set_msg_all_request.encode())
     server_feedback = clientSocket.recv(1024).decode()
     if server_feedback == "<msg_sent>":
         print("Message sent successfully!\n")
+        print("Me:" + msg)
 
 
 def show_all_msg():
     clientSocket.send("<show_all_msgs>".encode())
     server_feedback = clientSocket.recv(1024).decode()
-    # server_feedback = "<msg_lst><num_of_msgs><msg1><msg2>...<end>"
-    server_feedback = server_feedback[10:]
-    # server_feedback = "num_of_msgs><msg1><msg2>...<end>"
-    index = server_feedback.find(">")
-    num_of_msgs = server_feedback[0:index]
-    print("Number of users connected: " + num_of_msgs + "\nthe messages are:")
-    server_feedback = server_feedback[index + 1:]
-    # server_feedback = "<msg1><msg2>...<end>
-    for _ in range(int(num_of_msgs)):
+    if server_feedback == "<no_msgs>":
+        print("You have no messages yet\n")
+    else:
+        # server_feedback = "<msg_lst><num_of_msgs><msg1><msg2>...<end>"
+        server_feedback = server_feedback[10:]
+        # server_feedback = "num_of_msgs><msg1><msg2>...<end>"
         index = server_feedback.find(">")
-        msg = server_feedback[1:index]
-        print(msg + "\n")
+        num_of_msgs = server_feedback[0:index]
+        print("Number of messages: " + num_of_msgs + "\nthe messages are:")
         server_feedback = server_feedback[index + 1:]
+        # server_feedback = "<msg1><msg2>...<end>
+        for _ in range(int(num_of_msgs)):
+            index = server_feedback.find(">")
+            msg = server_feedback[1:index]
+            print(msg + "\n")
+            server_feedback = server_feedback[index + 1:]
 
 
 def get_list_file():
@@ -130,7 +138,6 @@ while True:
     except ValueError:
         print("Please enter numeric value!\n")
 
-
 while True:
     username = input("Input username: ")
     connect_request = "<connect><" + username + ">"
@@ -143,7 +150,8 @@ while True:
     elif feedback == "<available_name>":
         print("User name is taken!\n")
 
-while True:
+
+def menu():
     print("Action menu: \n")
     print("1- get users list\n")
     print("2- disconnect\n")
@@ -163,7 +171,17 @@ while True:
             actions(action)
             # if action is disconnect close socket
             if action == 2:
-                break
+                clientSocket.close()
+                exit()
     except ValueError:
         print("Please enter numeric value!\n")
-clientSocket.close()
+
+
+while True:
+    # checking if messages has received from server
+    feedback = clientSocket.recv(1024).decode()
+    if feedback == '':
+        # no messages, we'll print menu
+        menu()
+    else:
+        print(feedback[1:-1])
