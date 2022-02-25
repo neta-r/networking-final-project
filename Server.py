@@ -1,3 +1,4 @@
+import threading
 from _thread import start_new_thread
 # import socket module
 from socket import *
@@ -48,6 +49,7 @@ def disconnect(port):
     names[port] = str
     connectionSocket.send("<disconnected>".encode())
     print(name + ' left chat')
+    print("Num of threads is: " + str(num_of_threads-1))
 
 
 def set_msg(rest_of_msg, port, ip):
@@ -66,6 +68,7 @@ def set_msg(rest_of_msg, port, ip):
         users[name][3] += my_name + ":" + msg + ","
         connectionSocket.send("<msg_sent>".encode())
     else:
+        print("Don't know " + name)
         connectionSocket.send("<invalid_name>".encode())
 
 
@@ -81,6 +84,8 @@ def set_msg_all(msg, port):
 
 
 def show_all_msg(port):
+    # TODO: לשנות את ההפרדה לדיקשנרי
+    # TODO: לוודא ביצוע פעולות עבור משתמשים שהתחברו מאוחר יותר (טרדים)
     my_name = names[port]
     msgs = users[my_name][3]
     if msgs != "":
@@ -151,6 +156,7 @@ print("Ready to serve!")
 
 # this function is executed whenever a thread is being activated
 def multi_threaded_client(connectionSocket):
+    print("num of threads is: " + str(num_of_threads))
     while True:
         # receiving other messages
         message = connectionSocket.recv(1024).decode()
