@@ -1,4 +1,6 @@
 # import socket
+import errno
+import sys
 from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
@@ -42,7 +44,7 @@ def set_msg():
     else:
         if server_feedback == "<msg_sent>":
             print("Message sent successfully!\n")
-            print("Me:"+msg)
+            print("Me:" + msg)
         elif server_feedback == "<invalid_name>":
             print("The name you chose is not in the chatroom!\n")
 
@@ -150,17 +152,16 @@ while True:
     elif feedback == "<available_name>":
         print("User name is taken!\n")
 
-
-def menu():
+while True:
     print("Action menu: \n")
     print("1- get users list\n")
     print("2- disconnect\n")
     print("3- send private message\n")
     print("4- send message to all online users\n")
     print("5- show all messages\n")
-    print("6- get list of files\n")
-    print("7- download file\n")
-    print("8- proceed\n")
+    print("5- get list of files\n")
+    print("6- download file\n")
+    print("7- proceed\n")
     clientInput = input("Please select action: ")
     # checking if input is a number
     try:
@@ -169,19 +170,8 @@ def menu():
             print("Please choose number between 1 to 8\n")
         else:
             actions(action)
-            # if action is disconnect close socket
             if action == 2:
-                clientSocket.close()
-                exit()
+                break
     except ValueError:
         print("Please enter numeric value!\n")
-
-
-while True:
-    # checking if messages has received from server
-    feedback = clientSocket.recv(1024).decode()
-    if feedback == '':
-        # no messages, we'll print menu
-        menu()
-    else:
-        print(feedback[1:-1])
+clientSocket.close()

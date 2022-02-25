@@ -56,27 +56,27 @@ def set_msg(rest_of_msg, port, ip):
     index = rest_of_msg.find(">")
     name = rest_of_msg[0:index]
     msg = rest_of_msg[index + 2:]
-    if name == my_name:
-        connectionSocket.send("<message_to_yourself>".encode())
+    # if name == my_name:
+    #     connectionSocket.send("<message_to_yourself>".encode())
+    # else:
+    if name in users:
+        other_client_socket = users[name][2]
+        send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
+        other_client_socket.send(send_to_client.encode())
+        users[name][3] += my_name + ":" + msg + ","
+        connectionSocket.send("<msg_sent>".encode())
     else:
-        if name in users:
-            other_client_socket = users[name][2]
-            send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
-            other_client_socket.send(send_to_client.encode())
-            users[name][3] += my_name + ":" + msg + ","
-            connectionSocket.send("<msg_sent>".encode())
-        else:
-            connectionSocket.send("<invalid_name>".encode())
+        connectionSocket.send("<invalid_name>".encode())
 
 
 def set_msg_all(msg, port):
     # msg = "msg>"
     my_name = names[port]
     for key, val in users.items():
-        if key is not my_name:
-            other_client_socket = users[key][2]
-            users[key][3] += my_name + ":" + msg + ","
-            other_client_socket.send(msg.encode())
+        # if key is not my_name:
+        other_client_socket = users[key][2]
+        users[key][3] += my_name + ":" + msg + ","
+        other_client_socket.send(msg.encode())
     connectionSocket.send("<msg_sent>".encode())
 
 
