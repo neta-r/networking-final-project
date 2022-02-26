@@ -8,111 +8,33 @@ from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
 # TODO: figure out why we have to put specific ip instead of 'localhost'!
-serverName = '10.0.0.10'
-
-clients_lock = threading.Lock()
-
-
-def print_msg(server_feedback: str):
-    if server_feedback.startswith("<msg>"):
-        server_feedback = server_feedback[5:]
-        # message="<name><msg>"
-        index = server_feedback.find(">")
-        name = server_feedback[1:index]
-        msg = server_feedback[index + 1:-1]
-        print(name + ": " + msg)
-        return True
-    else:
-        return False
+serverName = '10.100.102.8'
 
 
 def get_users():
-    with clients_lock:
-        clientSocket.send("<get_users>".encode())
-        server_feedback = clientSocket.recv(1024).decode()
-        if print_msg(server_feedback):
-            server_feedback = clientSocket.recv(1024).decode()
-        # server_feedback = "<users_list><num_of_users><user1><user2>...<end>
-        server_feedback = server_feedback[12:]
-        # server_feedback = "num_of_users><user1><user2>...<end>
-        index = server_feedback.find(">")
-        num_of_usr = server_feedback[0:index]
-        print("Number of users connected: " + num_of_usr + "\nthe users:")
-        server_feedback = server_feedback[index + 1:]
-        # server_feedback = "<usr1><usr2>...<end>
-        for _ in range(int(num_of_usr)):
-            index = server_feedback.find(">")
-            user = server_feedback[1:index]
-            print(user + "\n")
-            server_feedback = server_feedback[index + 1:]
+    clientSocket.send("<get_users>".encode())
 
 
 def disconnect():
-    with clients_lock:
-        clientSocket.send("<disconnect>".encode())
-        server_feedback = clientSocket.recv(1024).decode()
-        if server_feedback == "<disconnected>":
-            print("Successfully disconnected\n")
-            clientSocket.close()
-            exit()
+    clientSocket.send("<disconnect>".encode())
+    server_feedback = clientSocket.recv(1024).decode()
 
 
 def set_msg():
-    with clients_lock:
-        other_user = input("Input username: ")
-        msg = input("Input message: ")
-        set_msg_request = "<set_msg><" + other_user + "><" + msg + ">"
-        clientSocket.send(set_msg_request.encode())
-        server_feedback = clientSocket.recv(1024).decode()
-        if print_msg(server_feedback):
-            server_feedback = clientSocket.recv(1024).decode()
-        if server_feedback == "<message_to_yourself>":
-            print("You can't send a message to yourself\n")
-        else:
-            if server_feedback == "<msg_sent>":
-                print("Message sent successfully!\n")
-                print("Me:" + msg)
-            elif server_feedback == "<invalid_name>":
-                print("The name you chose is not in the chatroom!\n")
-            else:
-                print(server_feedback)
+    other_user = input("Input username: ")
+    msg = input("Input message: ")
+    set_msg_request = "<set_msg><" + other_user + "><" + msg + ">"
+    clientSocket.send(set_msg_request.encode())
 
 
 def set_msg_all():
-    with clients_lock:
-        msg = input("Input message: ")
-        set_msg_all_request = "<set_msg_all><" + msg + ">"
-        clientSocket.send(set_msg_all_request.encode())
-        server_feedback = clientSocket.recv(1024).decode()
-        if print_msg(server_feedback):
-            server_feedback = clientSocket.recv(1024).decode()
-        if server_feedback == "<msg_sent>":
-            print("Message sent successfully!\n")
-            print("Me:" + msg)
+    msg = input("Input message: ")
+    set_msg_all_request = "<set_msg_all><" + msg + ">"
+    clientSocket.send(set_msg_all_request.encode())
 
 
 def show_all_msg():
-    with clients_lock:
-        clientSocket.send("<show_all_msgs>".encode())
-        server_feedback = clientSocket.recv(1024).decode()
-        if print_msg(server_feedback):
-            server_feedback = clientSocket.recv(1024).decode()
-        if server_feedback == "<no_msgs>":
-            print("You have no messages yet\n")
-        else:
-            # server_feedback = "<msg_lst><num_of_msgs><msg1><msg2>...<end>"
-            server_feedback = server_feedback[10:]
-            # server_feedback = "num_of_msgs><msg1><msg2>...<end>"
-            index = server_feedback.find(">")
-            num_of_msgs = server_feedback[0:index]
-            print("Number of messages: " + num_of_msgs + "\nthe messages are:")
-            server_feedback = server_feedback[index + 1:]
-            # server_feedback = "<msg1><msg2>...<end>
-            for _ in range(int(num_of_msgs)):
-                index = server_feedback.find(">")
-                msg = server_feedback[1:index]
-                print(msg + "\n")
-                server_feedback = server_feedback[index + 1:]
+    clientSocket.send("<show_all_msgs>".encode())
 
 
 def get_list_file():
@@ -162,9 +84,7 @@ while True:
                 clientSocket.bind(('0.0.0.0', clientPort))
                 clientSocket.connect(SERVER_ADDRESS)
                 feedback = clientSocket.recv(1024).decode()
-                if feedback == "<connection_established>":
-                    print("connection established\n")
-                    break
+                break
             except OSError as e:
                 # error number 10048 = Port is taken,
                 # Only one usage of each socket address is normally permitted
@@ -192,13 +112,61 @@ def receive_msgs(clientsocket):
     while True:
         # message="<name><msg>"
         buffer = clientSocket.recv(1024)
-        if not buffer:
-            break
-        message = buffer.decode()
-        index = message.find(">")
-        name = message[1:index]
-        msg = message[index + 1:-1]
-        print(name + ": " + msg)
+        if buffer:
+            message = buffer.decode()
+
+            # get users
+            if message.startswith("<users_lst>"):
+                message = message[12:]
+                # server_feedback = "num_of_users><user1><user2>...<end>
+                index = message.find(">")
+                num_of_usr = message[0:index]
+                print("Number of users connected: " + num_of_usr + "\nthe users:")
+                message = message[index + 1:]
+                # server_feedback = "<usr1><usr2>...<end>
+                for _ in range(int(num_of_usr)):
+                    index = message.find(">")
+                    user = message[1:index]
+                    print(user + "\n")
+                    message = message[index + 1:]
+
+            # connect
+            if feedback == "<connection_established>":
+                print("connection established\n")
+
+            # disconnect
+            if message.startswith("<disconnected>"):
+                print("Successfully disconnected\n")
+                clientSocket.close()
+                exit()
+
+            # send message
+            if message.startswith("<message_to_yourself>"):
+                print("You can't send a message to yourself\n")
+
+            if message.startswith("<msg_sent>"):
+                print("Message sent successfully!\n")
+
+            if message.startswith("<invalid_name>"):
+                print("The name you chose is not in the chatroom!\n")
+
+            # show all messages
+            if message.startswith("<no_msgs>"):
+                print("You have no messages yet\n")
+
+            if message.startswith("<msg_lst>"):
+                message = message[10:]
+                # message = "num_of_msgs><msg1><msg2>...<end>"
+                index = message.find(">")
+                num_of_msgs = message[0:index]
+                print("Number of messages: " + num_of_msgs + "\nthe messages are:")
+                message = message[index + 1:]
+                # message = "<msg1><msg2>...<end>
+                for _ in range(int(num_of_msgs)):
+                    index = message.find(">")
+                    msg = message[1:index]
+                    print(msg + "\n")
+                    message = message[index + 1:]
 
 
 def actions():
@@ -220,14 +188,8 @@ while True:
     connect_request = "<connect><" + username + ">"
     # clientSocket.send(bytes(sentence, encoding="UTF-8"))
     clientSocket.send(connect_request.encode())
-    feedback = clientSocket.recv(1024).decode()
-    if feedback == "<connected>":
-        print("Thank you!\n")
-        menu()
-        # actions()
-        flag = threading.Thread(target=actions())
-        threading.Thread(target=receive_msgs())
-
-        break
-    elif feedback == "<available_name>":
-        print("User name is taken!\n")
+    print("Thank you!\n")
+    menu()
+    # actions()
+    threading.Thread(target=actions()).start()
+    threading.Thread(target=receive_msgs(clientSocket)).start()
