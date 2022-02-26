@@ -4,7 +4,6 @@ from _thread import start_new_thread
 # import socket module
 from socket import *
 import sys  # In order to terminate the program
-
 num_of_threads = 0
 
 # client's Port: user's name
@@ -39,6 +38,7 @@ def get_users():
 
     print("online users: " + online_users_print[0:-1])
     message_send = "<users_lst><" + str(num_of_threads) + ">" + str(online_users_send) + "<end>"
+    print("insideeeeeee: " + str(connectionSocket))
     connectionSocket.send(message_send.encode())
 
 
@@ -119,6 +119,7 @@ def actions(action, rest_of_msg, port, ip):
     if action == "connect":
         connect(rest_of_msg, port, ip)
     elif action == "get_users":
+        print(connectionSocket)
         get_users()
     elif action == "disconnect":
         disconnect(port)

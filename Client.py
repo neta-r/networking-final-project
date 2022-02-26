@@ -9,6 +9,7 @@ serverName = '10.0.0.10'
 
 
 def get_users():
+    print(username)
     clientSocket.send("<get_users>".encode())
 
 
@@ -119,17 +120,19 @@ def receive_msgs(clientsocket):
                 # server_feedback = "num_of_users><user1><user2>...<end>
                 index = message.find(">")
                 num_of_usr = message[0:index]
-                print("Number of users connected: " + num_of_usr + "\nthe users:")
+                print("Number of users connected: " + num_of_usr + "\nThe users are: ")
                 message = message[index + 1:]
                 # server_feedback = "<usr1><usr2>...<end>
+                stringUser = ""
                 for _ in range(int(num_of_usr)):
                     index = message.find(">")
                     user = message[1:index]
-                    print(user + "\n")
+                    stringUser = stringUser + user + ", "
                     message = message[index + 1:]
+                print(stringUser[0:-2])
 
             # connect
-            elif feedback == "<connection_established>":
+            elif message == "<connection_established>":
                 print("connection established\n")
 
             # disconnect
