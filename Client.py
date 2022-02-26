@@ -24,7 +24,7 @@ class Client:
         t1.start()
 
     def get_port(self):
-        server_name = '10.100.102.8'
+        server_name = '127.0.0.1'
         while True:
             client_input = input("Enter port number between 55000 to 55015: ")
             # checking if input is a number
@@ -162,18 +162,20 @@ class Client:
                     # message = "num_of_msgs><msg1><msg2>...<end>"
                     index = message.find(">")
                     num_of_msgs = message[0:index]
-                    print("Number of messages: " + num_of_msgs + "\nthe messages are:")
+                    print("Number of messages: " + num_of_msgs + "\nThe messages are:")
                     message = message[index + 1:]
                     # message = "<msg1><msg2>...<end>
                     for _ in range(int(num_of_msgs)):
                         index = message.find(">")
                         msg = message[1:index]
-                        print(msg + "\n")
+                        print(msg + ", ")
                         message = message[index + 1:]
+                # else:
+                    # print(message)
 
     def actions(self):
         while True:
-            time.sleep(3)
+            time.sleep(2)
             client_input = input("Please select action: \n")
             # checking if input is a number
             try:
