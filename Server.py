@@ -128,6 +128,7 @@ class Server:
             send += "<end>"
             connection_socket.send(send.encode())
         else:
+
             connection_socket.send("<no_msgs>".encode())
 
     def get_list_file(self, connection_socket):

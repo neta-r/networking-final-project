@@ -67,6 +67,7 @@ class Client:
         set_msg_all_request = "<set_msg_all><" + msg + ">"
         self.client_socket.send(set_msg_all_request.encode())
 
+
     def show_all_msg(self):
         self.client_socket.send("<show_all_msgs>".encode())
 
