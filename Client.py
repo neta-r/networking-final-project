@@ -1,9 +1,5 @@
 # import socket
-import _thread
-import errno
-import sys
 import threading
-from _thread import start_new_thread
 from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
@@ -189,7 +185,9 @@ while True:
     # clientSocket.send(bytes(sentence, encoding="UTF-8"))
     clientSocket.send(connect_request.encode())
     print("Thank you!\n")
-    menu()
-    # actions()
-    threading.Thread(target=actions()).start()
-    threading.Thread(target=receive_msgs(clientSocket)).start()
+    break
+menu()
+t1 = threading.Thread(target=actions)
+t2 = threading.Thread(target=receive_msgs, args=(clientSocket,))
+t1.start()
+t2.start()
