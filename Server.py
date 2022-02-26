@@ -57,7 +57,7 @@ class Server:
     def connect(self, name, port, ip, connection_socket):
         if name not in Server.users:
             Server.names[port] = name
-            Server.users[name] = [ip, port, connection_socket, []]
+            Server.users[name] = [ip, port, connection_socket, ""]
             connection_socket.send('<connected>'.encode())
             print(name + " connected")
         else:
@@ -100,7 +100,7 @@ class Server:
             other_client_socket = Server.users[name][2]
             send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
             other_client_socket.send(send_to_client.encode())
-            Server.users[name][3] = Server.users[name][3] + [my_name, msg]
+            Server.users[name][3] += my_name + ":" + msg + "\n"
             connection_socket.send("<msg_sent>".encode())
         else:
             connection_socket.send("<invalid_name>".encode())
@@ -111,7 +111,7 @@ class Server:
         for key, val in Server.users.items():
             # if key is not my_name:
             other_client_socket = Server.users[key][2]
-            Server.users[key][3] = Server.users[key][3] + [my_name, msg]
+            Server.users[key][3] += my_name + ":" + msg + "\n"
             other_client_socket.send(msg.encode())
         connection_socket.send("<msg_sent>".encode())
 
@@ -120,15 +120,17 @@ class Server:
         # TODO: לוודא ביצוע פעולות עבור משתמשים שהתחברו מאוחר יותר (טרדים)
         my_name = Server.names[port]
         msgs = Server.users[my_name][3]
-        if len(msgs) != 0:
-            num_of_msgs = len(msgs)
+        if msgs != "":
+            msgs_and_users = msgs.split('\n')
+            num_of_msgs = len(msgs_and_users) - 1
             send = "<msg_lst><" + str(num_of_msgs) + ">"
-            for arr in msgs:
-                send += "<" + arr[0] + ":" + arr[1] + ">"
+            for arr in msgs_and_users:
+                if arr != "":
+                    user_name, user_msg = arr.split(':')
+                    send += "<" + user_name + ":" + user_msg + ">"
             send += "<end>"
             connection_socket.send(send.encode())
         else:
-
             connection_socket.send("<no_msgs>".encode())
 
     def get_list_file(self, connection_socket):
