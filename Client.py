@@ -67,9 +67,6 @@ class Client:
         set_msg_all_request = "<set_msg_all><" + msg + ">"
         self.client_socket.send(set_msg_all_request.encode())
 
-    def show_all_msg(self):
-        self.client_socket.send("<show_all_msgs>".encode())
-
     def get_list_file(self):
         return "h"
 
@@ -89,12 +86,10 @@ class Client:
         elif action == 4:
             Client.set_msg_all(self)
         elif action == 5:
-            Client.show_all_msg(self)
-        elif action == 6:
             Client.get_list_file(self)
-        elif action == 7:
+        elif action == 6:
             Client.download(self)
-        elif action == 8:
+        elif action == 7:
             Client.proceed(self)
         else:
             return "Invalid action"
@@ -105,10 +100,9 @@ class Client:
         print("2- disconnect\n")
         print("3- send private message\n")
         print("4- send message to all online users\n")
-        print("5- show all messages\n")
-        print("6- get list of files\n")
-        print("7- download file\n")
-        print("8- proceed\n")
+        print("5- get list of files\n")
+        print("6- download file\n")
+        print("7- proceed\n")
 
     def receive_msgs(self):
         while True:
@@ -157,19 +151,6 @@ class Client:
                 elif message.startswith("<no_msgs>"):
                     print("You have no messages yet\n")
 
-                elif message.startswith("<msg_lst>"):
-                    message = message[10:]
-                    # message = "num_of_msgs><msg1><msg2>...<end>"
-                    index = message.find(">")
-                    num_of_msgs = message[0:index]
-                    print("Number of messages: " + num_of_msgs + "\nThe messages are:")
-                    message = message[index + 1:]
-                    # message = "<msg1><msg2>...<end>
-                    for _ in range(int(num_of_msgs)):
-                        index = message.find(">")
-                        msg = message[1:index]
-                        print(msg + ", ")
-                        message = message[index + 1:]
                 elif message.startswith("<msg>"):
                     message = message[6:]
                     index = message.find(">")
@@ -184,8 +165,8 @@ class Client:
             # checking if input is a number
             try:
                 action = int(client_input)
-                if int(action) < 1 or int(action) > 8:
-                    print("Please choose number between 1 to 8\n")
+                if int(action) < 1 or int(action) > 7:
+                    print("Please choose number between 1 to 7\n")
                 else:
                     Client.switcher(self, action)
             except ValueError:
