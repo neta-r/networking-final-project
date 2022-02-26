@@ -170,8 +170,12 @@ class Client:
                         msg = message[1:index]
                         print(msg + ", ")
                         message = message[index + 1:]
-                # else:
-                    # print(message)
+                elif message.startswith("<msg>"):
+                    message = message[6:]
+                    index = message.find(">")
+                    name = message[0:index]
+                    msg = message[index+2:-1]
+                    print("\n" + name + ": " + msg)
 
     def actions(self):
         while True:

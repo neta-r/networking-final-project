@@ -98,7 +98,7 @@ class Server:
         # else:
         if name in Server.users:
             other_client_socket = Server.users[name][2]
-            send_to_client = "<" + str(my_name) + "><" + str(msg) + ">"
+            send_to_client = "<msg><" + str(my_name) + "><" + str(msg) + ">"
             other_client_socket.send(send_to_client.encode())
             Server.users[name][3] += my_name + ":" + msg + "\n"
             connection_socket.send("<msg_sent>".encode())
@@ -112,7 +112,7 @@ class Server:
             # if key is not my_name:
             other_client_socket = Server.users[key][2]
             Server.users[key][3] += my_name + ":" + msg + "\n"
-            other_client_socket.send(msg.encode())
+            other_client_socket.send(("<msg>" + msg).encode())
         connection_socket.send("<msg_sent>".encode())
 
     def show_all_msg(self, port, connection_socket):
