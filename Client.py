@@ -4,7 +4,7 @@ from socket import *
 
 # SERVER_ADDRESS = ('localhost', 13000)
 # TODO: figure out why we have to put specific ip instead of 'localhost'!
-serverName = '10.100.102.8'
+serverName = '10.0.0.10'
 
 
 def get_users():
@@ -105,6 +105,7 @@ def menu():
 
 
 def receive_msgs(clientsocket):
+
     while True:
         # message="<name><msg>"
         buffer = clientSocket.recv(1024)
@@ -127,30 +128,30 @@ def receive_msgs(clientsocket):
                     message = message[index + 1:]
 
             # connect
-            if feedback == "<connection_established>":
+            elif feedback == "<connection_established>":
                 print("connection established\n")
 
             # disconnect
-            if message.startswith("<disconnected>"):
+            elif message.startswith("<disconnected>"):
                 print("Successfully disconnected\n")
                 clientSocket.close()
                 exit()
 
             # send message
-            if message.startswith("<message_to_yourself>"):
+            elif message.startswith("<message_to_yourself>"):
                 print("You can't send a message to yourself\n")
 
-            if message.startswith("<msg_sent>"):
+            elif message.startswith("<msg_sent>"):
                 print("Message sent successfully!\n")
 
-            if message.startswith("<invalid_name>"):
+            elif message.startswith("<invalid_name>"):
                 print("The name you chose is not in the chatroom!\n")
 
             # show all messages
-            if message.startswith("<no_msgs>"):
+            elif message.startswith("<no_msgs>"):
                 print("You have no messages yet\n")
 
-            if message.startswith("<msg_lst>"):
+            elif message.startswith("<msg_lst>"):
                 message = message[10:]
                 # message = "num_of_msgs><msg1><msg2>...<end>"
                 index = message.find(">")
@@ -167,7 +168,7 @@ def receive_msgs(clientsocket):
 
 def actions():
     while True:
-        client_input = input("Please select action: ")
+        client_input = input("Please select action: \n")
         # checking if input is a number
         try:
             action = int(client_input)
@@ -189,5 +190,13 @@ while True:
 menu()
 t1 = threading.Thread(target=actions)
 t2 = threading.Thread(target=receive_msgs, args=(clientSocket,))
-t1.start()
+
 t2.start()
+t1.start()
+t2.join()
+t1.join()
+
+
+
+
+
