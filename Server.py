@@ -48,7 +48,7 @@ class Server:
             index = message.find(">")
             action = message[1:index]
             # sending to a switch case action and other relevant info
-            Server.actions(self, action, message[index + 2:-1], ip, port, connection_socket)
+            Server.actions(self, action, message[index + 2:-1], port, ip, connection_socket)
             if action == "disconnect":
                 break
         connection_socket.close()
