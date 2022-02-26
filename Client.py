@@ -1,4 +1,5 @@
 # import socket
+import time
 import threading
 from socket import *
 
@@ -168,6 +169,7 @@ def receive_msgs(clientsocket):
 
 def actions():
     while True:
+        time.sleep(3)
         client_input = input("Please select action: \n")
         # checking if input is a number
         try:
@@ -190,13 +192,9 @@ while True:
 menu()
 t1 = threading.Thread(target=actions)
 t2 = threading.Thread(target=receive_msgs, args=(clientSocket,))
-
 t2.start()
 t1.start()
+
 t2.join()
-t1.join()
-
-
-
 
 
