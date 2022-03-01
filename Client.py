@@ -1,3 +1,4 @@
+import hashlib
 import os
 import pickle
 import time
@@ -167,6 +168,12 @@ class Client:
         print("6- download file\n")
         print("7- proceed\n")
 
+    def checksum(self, chunk_data):
+        md5_hash = hashlib.md5()
+        md5_hash.update(chunk_data)
+        digest = md5_hash.hexdigest()
+        return digest
+
     def receive_udp_msgs(self):
         while True:
             # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
@@ -178,11 +185,18 @@ class Client:
                 if message.startswith("<download>".encode()):
                     file_size = message[11:]
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    count_bytes = 0
                     while True:
                         bytes_read = self.client_socket_UDP.recv(2048)
                         data_read = pickle.loads(bytes_read)
                         print(data_read.data)
-                        self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                        receive_checksum = self.checksum(data_read.data)
+                        if receive_checksum == data_read.checksum:
+                            self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                            count_bytes = count_bytes + len(data_read.data)
+                        if count_bytes == file_size:
+                            self.client_socket_UDP.close()
+                            break
 
     def receive_msgs(self):
         while True:

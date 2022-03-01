@@ -5,6 +5,7 @@ import timeit
 from _thread import start_new_thread
 import sys  # In order to terminate the program
 from socket import *
+import hashlib
 
 
 class Chunk(object):
@@ -139,8 +140,11 @@ class Server:
         connection_socket.send(files.encode())
 
     # TODO: Find checksum for each chunk
-    def checksum(self, chunk):
-        pass
+    def checksum(self, chunk_data):
+        md5_hash = hashlib.md5()
+        md5_hash.update(chunk_data)
+        digest = md5_hash.hexdigest()
+        return digest
 
     def send_file(self, server_socket_UDP, ip, file_name, port, file_bytes):
         with open(file_name, 'rb') as f:
