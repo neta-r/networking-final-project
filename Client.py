@@ -1,7 +1,12 @@
 import time
 import threading
 from socket import *
-from Server import Server
+from tkinter import *
+
+
+def rgb_hack(rgb):
+    return "#%02x%02x%02x" % rgb
+
 
 class Client:
     client_socket = SocketKind
@@ -9,6 +14,32 @@ class Client:
     port = int
 
     def __init__(self):
+        # window = Tk()
+        # window.title("Login")
+        # window.geometry("400x300")
+        # window.config(bg='#EEBAC6')
+
+        # welcome_Label = Label(window, text=" Welcome to our chat! ", fg='pink', bg='white', relief=GROOVE,
+        #                       font=("arial", 12, "bold"))
+        # welcome_Label.place(relx=0.5, rely=0.1, anchor=CENTER)
+        #
+        # insert_port_label = Label(window, text="Port Number: ", fg='white', bg='#EEBAC6', relief=FLAT,
+        #                           font=("arial", 12, "bold"))
+        # insert_port_label.place(relx=0.05, rely=0.3, anchor=W)
+        #
+        # port_entry = Entry(window, bd=5)
+        # port_entry.pack(side=RIGHT)
+        #
+        # insert_username_label = Label(window, text="User Name: ", fg='white', bg='#EEBAC6', relief=FLAT,
+        #                               font=("arial", 12, "bold"))
+        # insert_username_label.place(relx=0.05, rely=0.5, anchor=W)
+        #
+        # username_entry = Entry(window, bd=5)
+        # username_entry.pack(side=RIGHT)
+        #
+        # sign_in_button = Button(window, text="Sign In", fg='white', bg='pink', relief=RIDGE, font=("arial", 12, "bold"))
+        # sign_in_button.place(x=165, y=230)
+        # window.mainloop()
         self.get_port()
         while True:
             self.name = input("Input username: ")
@@ -68,7 +99,9 @@ class Client:
         self.client_socket.send(set_msg_all_request.encode())
 
     def get_list_file(self):
-        return "h"
+        # <get_list_file>
+        self.client_socket.send("<get_list_file>".encode())
+
 
     def download(self):
         return "h"
@@ -155,12 +188,21 @@ class Client:
                     message = message[6:]
                     index = message.find(">")
                     name = message[0:index]
-                    msg = message[index+2:-1]
+                    msg = message[index + 2:-1]
                     print("\n" + name + ": " + msg)
+
+                #list_file
+                elif message.startswith("<file_lst>"):
+                    message = message[11:]
+                    while not message.startswith("end"):
+                        index = message.find(">")
+                        file = message[0:index]
+                        print(file + "\n")
+                        message = message[index+2:]
 
     def actions(self):
         while True:
-            time.sleep(2)
+            time.sleep(1.5)
             client_input = input("Please select action: \n")
             # checking if input is a number
             try:
@@ -175,4 +217,3 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
-

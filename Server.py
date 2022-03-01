@@ -1,3 +1,4 @@
+import os
 from _thread import start_new_thread
 from socket import *
 import sys  # In order to terminate the program
@@ -37,7 +38,7 @@ class Server:
             # addr[0]= client's ip, addr[1]= client's port
             connection_socket, addr = server_socket.accept()
             connection_socket.send("<connection_established>".encode())
-            Server.online_users = int(Server.online_users)+1
+            Server.online_users = int(Server.online_users) + 1
             start_new_thread(Server.multi_threaded_client, (self, connection_socket, addr[0], addr[1]))
 
     # this function is executed whenever a thread is being activated
@@ -113,7 +114,15 @@ class Server:
         connection_socket.send("<msg_sent>".encode())
 
     def get_list_file(self, connection_socket):
-        return "h"
+        cwd = os.getcwd()
+        only_files = [os.path.join(cwd, f) for f in os.listdir(cwd) if
+                      os.path.isfile(os.path.join(cwd, f))]
+        files = "<file_lst>"
+        for file in only_files:
+            files = files + "<" + file + ">"
+            # print(file + "\n")
+        files = files + "<end>"
+        connection_socket.send(files.encode())
 
     def download(self, connection_socket):
         return "h"
