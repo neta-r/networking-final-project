@@ -157,24 +157,25 @@ class Server:
                     break
                 except Exception as e:
                     server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
-            # data = f.read(1024)
-            # # divide data to chunks
-            # while data:
-            #     chunk = Chunk()
-            #     chunk.data = data
-            #     chunk.checksum = self.checksum(chunk.data)
-            #     chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
-            #     flag = True
-            #     while flag:
-            #         flag = False
-            #         try:
-            #             server_socket_UDP.sendto(chunk_in_binary, (ip, port))
-            #             ACK, address = server_socket_UDP.recvfrom(2048)
-            #             print(ACK)
-            #             break
-            #         except Exception as e:
-            #             flag = True
-            #     data = f.read(2048)
+
+            # divide data to chunks
+            data = f.read(1024)
+            while data:
+                chunk = Chunk()
+                chunk.data = data
+                chunk.checksum = self.checksum(chunk.data)
+                chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
+                flag = True
+                while flag:
+                    flag = False
+                    try:
+                        server_socket_UDP.sendto(chunk_in_binary, (ip, port))
+                        ACK, address = server_socket_UDP.recvfrom(2048)
+                        print(ACK)
+                        break
+                    except Exception as e:
+                        flag = True
+                data = f.read(2048)
 
     # Download - UDP
     def download(self, connection_socket, ip, file_name, port):

@@ -1,9 +1,10 @@
 import os
+import pickle
 import time
 import threading
 from socket import *
 from tkinter import *
-
+from Server import Chunk
 
 #
 # def rgb_hack(rgb):
@@ -177,8 +178,11 @@ class Client:
                 if message.startswith("<download>".encode()):
                     file_size = message[11:]
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                    # while True:
-                    #     bytes_read = self.client_socket_UDP.recv(2048)
+                    while True:
+                        bytes_read = self.client_socket_UDP.recv(2048)
+                        data_read = pickle.loads(bytes_read)
+                        print(data_read.data)
+                        self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
 
     def receive_msgs(self):
         while True:
