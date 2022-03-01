@@ -124,6 +124,7 @@ class Server:
         files = files + "<end>"
         connection_socket.send(files.encode())
 
+    # Download - UDP
     def download(self, connection_socket):
         return "h"
 

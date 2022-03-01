@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 from socket import *
@@ -12,6 +13,8 @@ class Client:
     client_socket = SocketKind
     name = str
     port = int
+
+    dir_files = []
 
     def __init__(self):
         # window = Tk()
@@ -102,9 +105,18 @@ class Client:
         # <get_list_file>
         self.client_socket.send("<get_list_file>".encode())
 
-
+    # Download - TCP
     def download(self):
-        return "h"
+        if len(self.dir_files) == 0:
+            print("Choose action 5 first\n")
+            return
+        choose_file = input("Please enter requested file name: ")
+        while choose_file not in self.dir_files:
+            print("Please enter valid file name\n")
+            choose_file = input("Please enter requested file name or 'q' to quit: ")
+            if choose_file == 'q':
+                break
+        self.client_socket.send(("<download><" + choose_file + ">").encode())
 
     def proceed(self):
         return "h"
@@ -191,14 +203,17 @@ class Client:
                     msg = message[index + 2:-1]
                     print("\n" + name + ": " + msg)
 
-                #list_file
+                # list_file
                 elif message.startswith("<file_lst>"):
                     message = message[11:]
                     while not message.startswith("end"):
                         index = message.find(">")
                         file = message[0:index]
                         print(file + "\n")
-                        message = message[index+2:]
+                        self.dir_files.append(file)
+                        index1 = file.rfind("\\")
+                        self.dir_files.append(file[index1+1:])
+                        message = message[index + 2:]
 
     def actions(self):
         while True:
