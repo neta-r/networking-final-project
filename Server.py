@@ -41,6 +41,8 @@ class Server:
 
         # bind socket to a specific address and port
         # '' means listen to all ip's
+        self.file_name = ""  # TODO: Change to Dictionary with users
+        self.file_bytes = 0
         self.server_socket_TCP.bind(('', self.server_port))
 
         # define at least 5 connections
@@ -147,10 +149,12 @@ class Server:
         return digest
 
     def send_file(self, server_socket_UDP, ip, file_name, port, file_bytes):
+        # <first><download - [0:1/2]>nvnvnvn<proceed><download[1/2:]>jfbvkjsbfl
         with open(file_name, 'rb') as f:
             print("in send file 1")
             # check if the client received file size - ACK, if not server resend it again after 10 sec
             server_socket_UDP.settimeout(100)
+
             while True:
                 try:
                     # send file size to client
@@ -185,25 +189,22 @@ class Server:
     def download(self, connection_socket, ip, file_name, port):
         # Bytes num of file
         file_bytes = os.path.getsize(file_name)
-
-        # TODO: CHECK 64after send to
+        print("file bytes is: " + str(file_bytes))
+        # TODO: CHECK 64 after send to
         # after send file
         if file_bytes >= (1 << 64):
             connection_socket.send('<too_big>'.encode())
             return
-
         # opening UDP connection
         self.server_socket_UDP.bind(('', self.server_port))
-        # print("The server is ready to receive...")
-        # message, clientAddress = self.server_socket_UDP.recvfrom(2048)
-        # print("Get from client:", message)
-        # modifiedMessage = message.upper()
-        self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes)
-        # self.server_socket_UDP.sendto(modifiedMessage, clientAddress)
-        self.server_socket_UDP.close()
+        self.server_socket_UDP.sendto("<first>".encode(), (ip, port))
+        self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes / 2)
 
-    def proceed(self, connection_socket):
-        return "h"
+    # TODO: Check 2 users download file together
+    def proceed(self, ip, port):
+        self.server_socket_UDP.sendto("<second>".encode(), (ip, port))
+        self.send_file(self.server_socket_UDP, ip, self.file_name, port, self.file_bytes / 2)
+        self.server_socket_UDP.close()
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):
         if action == "connect":
@@ -222,7 +223,7 @@ class Server:
         elif action == "download":
             Server.download(self, connection_socket, ip, rest_of_msg, port)
         elif action == "proceed":
-            Server.proceed(self, connection_socket)
+            Server.proceed(self, ip, port)
         else:
             return "Invalid action"
 

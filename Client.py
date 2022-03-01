@@ -128,14 +128,6 @@ class Client:
                 break
         # format - <download><file_name>
         self.client_socket_TCP.send(("<download><" + choose_file + ">").encode())
-        # Open UDP connection
-        # self.client_socket_UDP.connect(self.SERVER_ADDRESS)
-        # self.client_socket_UDP.sendto("ACK".encode(), )
-        # message = input('Input lowercase sentence:')
-        # self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
-
-        # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
-        # print("Get from server:", modifiedMessage.decode())
 
     def proceed(self):
         return "h"
@@ -174,29 +166,39 @@ class Client:
         digest = md5_hash.hexdigest()
         return digest
 
+    def receive_half_file(self):
+        message, serverAddress = self.client_socket_UDP.recvfrom(2048)
+        if message.startswith("<download>".encode()):
+            file_size = message[10:]
+            str_file_size = str(file_size)
+            string_file_size = str_file_size[2:-1]
+            self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+
+            count_bytes = 0
+            while True:
+                bytes_read = self.client_socket_UDP.recv(2048)
+                data_read = pickle.loads(bytes_read)
+                # print(data_read.data)
+                receive_checksum = self.checksum(data_read.data)
+                if receive_checksum == data_read.checksum:
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    count_bytes = count_bytes + len(data_read.data)
+                if count_bytes == file_size:
+                    self.client_socket_UDP.close()
+                    break
+            return str_file_size
+
     def receive_udp_msgs(self):
         while True:
-            # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
-            # print("Get from server:", modifiedMessage.decode())
-            # time.sleep(2)
-            # break
             message, serverAddress = self.client_socket_UDP.recvfrom(2048)
             if message:
-                if message.startswith("<download>".encode()):
-                    file_size = message[11:]
-                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                    count_bytes = 0
-                    while True:
-                        bytes_read = self.client_socket_UDP.recv(2048)
-                        data_read = pickle.loads(bytes_read)
-                        print(data_read.data)
-                        receive_checksum = self.checksum(data_read.data)
-                        if receive_checksum == data_read.checksum:
-                            self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                            count_bytes = count_bytes + len(data_read.data)
-                        if count_bytes == file_size:
-                            self.client_socket_UDP.close()
-                            break
+                if message.startswith("<first>".encode()):
+                    string_file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 50% out of file. Last byte is: " + string_file_size)
+                    # TODO: implement "Press To Proceed"
+                    self.client_socket_UDP.sendto("<proceed>".encode(), serverAddress)
+                    string_file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 100% out of file. Last byte is: "+str(int(string_file_size)*2))
 
     def receive_msgs(self):
         while True:
