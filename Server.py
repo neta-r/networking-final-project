@@ -143,39 +143,38 @@ class Server:
         pass
 
     def send_file(self, server_socket_UDP, ip, file_name, port, file_bytes):
-        # with open(file_name, 'rb') as f:
-        #     print("in send file 1")
-        #     # check if the client received file size - ACK, if not server resend it again after 10 sec
-        #     server_socket_UDP.settimeout(100)
-        #     while True:
-        #         try:
-        #             # send file size to client
-        #             server_socket_UDP.sendto("HIIII".encode(), (ip, port))
-        #             # server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
-        #             ACK, address = server_socket_UDP.recvfrom(1024)
-        #             break
-        #         except Exception as e:
-        #             print(e.__traceback__)
-        #             server_socket_UDP.sendto(str(file_bytes).encode(), (ip, port))
-        #     data = f.read(1024)
-        #     # divide data to chunks
-        #     while data:
-        #         chunk = Chunk()
-        #         chunk.data = data
-        #         chunk.checksum = self.checksum(chunk.data)
-        #         chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
-        #         flag = True
-        #         while flag:
-        #             flag = False
-        #             try:
-        #                 server_socket_UDP.sendto(chunk_in_binary, (ip, port))
-        #                 ACK, address = server_socket_UDP.recvfrom(2048)
-        #                 print(ACK)
-        #                 break
-        #             except Exception as e:
-        #                 flag = True
-        #         data = f.read(2048)
-            self.server_socket_UDP.close()
+        with open(file_name, 'rb') as f:
+            print("in send file 1")
+            # check if the client received file size - ACK, if not server resend it again after 10 sec
+            server_socket_UDP.settimeout(100)
+            while True:
+                try:
+                    # send file size to client
+                    # server_socket_UDP.sendto("HIIII".encode(), (ip, port))
+                    server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
+                    ACK, address = server_socket_UDP.recvfrom(1024)
+                    print(ACK)
+                    break
+                except Exception as e:
+                    server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
+            # data = f.read(1024)
+            # # divide data to chunks
+            # while data:
+            #     chunk = Chunk()
+            #     chunk.data = data
+            #     chunk.checksum = self.checksum(chunk.data)
+            #     chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
+            #     flag = True
+            #     while flag:
+            #         flag = False
+            #         try:
+            #             server_socket_UDP.sendto(chunk_in_binary, (ip, port))
+            #             ACK, address = server_socket_UDP.recvfrom(2048)
+            #             print(ACK)
+            #             break
+            #         except Exception as e:
+            #             flag = True
+            #     data = f.read(2048)
 
     # Download - UDP
     def download(self, connection_socket, ip, file_name, port):
@@ -190,11 +189,13 @@ class Server:
 
         # opening UDP connection
         self.server_socket_UDP.bind(('', self.server_port))
-        print("The server is ready to receive...")
-        message, clientAddress = self.server_socket_UDP.recvfrom(2048)
-        print("Get from client:", message)
-        modifiedMessage = message.upper()
-        self.server_socket_UDP.sendto(modifiedMessage, clientAddress)
+        # print("The server is ready to receive...")
+        # message, clientAddress = self.server_socket_UDP.recvfrom(2048)
+        # print("Get from client:", message)
+        # modifiedMessage = message.upper()
+        self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes)
+        # self.server_socket_UDP.sendto(modifiedMessage, clientAddress)
+        self.server_socket_UDP.close()
 
     def proceed(self, connection_socket):
         return "h"

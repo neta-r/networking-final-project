@@ -129,8 +129,8 @@ class Client:
         # Open UDP connection
         # self.client_socket_UDP.connect(self.SERVER_ADDRESS)
         # self.client_socket_UDP.sendto("ACK".encode(), )
-        message = input('Input lowercase sentence:')
-        self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
+        # message = input('Input lowercase sentence:')
+        # self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
 
         # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
         # print("Get from server:", modifiedMessage.decode())
@@ -168,11 +168,17 @@ class Client:
 
     def receive_udp_msgs(self):
         while True:
-            modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
-            print("Get from server:", modifiedMessage.decode())
-            time.sleep(2)
-            break
-        self.client_socket_UDP.close()
+            # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
+            # print("Get from server:", modifiedMessage.decode())
+            # time.sleep(2)
+            # break
+            message, serverAddress = self.client_socket_UDP.recvfrom(2048)
+            if message:
+                if message.startswith("<download>".encode()):
+                    file_size = message[11:]
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    # while True:
+                    #     bytes_read = self.client_socket_UDP.recv(2048)
 
     def receive_msgs(self):
         while True:
