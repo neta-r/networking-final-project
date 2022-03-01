@@ -4,6 +4,7 @@ import threading
 from socket import *
 from tkinter import *
 
+
 #
 # def rgb_hack(rgb):
 #     return "#%02x%02x%02x" % rgb
@@ -45,7 +46,7 @@ class Client:
         # sign_in_button = Button(window, text="Sign In", fg='white', bg='pink', relief=RIDGE, font=("arial", 12, "bold"))
         # sign_in_button.place(x=165, y=230)
         # window.mainloop()
-        # self.UDP_connection = False
+        self.UDP_connection = False
 
         self.get_port()
         while True:
@@ -129,10 +130,10 @@ class Client:
         # self.client_socket_UDP.sendto("ACK".encode(), )
         message = input('Input lowercase sentence:')
         self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
-        modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
-        print("Get from server:", modifiedMessage.decode())
+        # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
+        # print("Get from server:", modifiedMessage.decode())
 
-        # self.UDP_connection = True
+        self.UDP_connection = True
 
     def proceed(self):
         return "h"
@@ -168,11 +169,11 @@ class Client:
     def receive_msgs(self):
         while True:
             # if self.UDP_connection:
-            #     print("hiii im here")
-            #     bufferUDP, addr = self.client_socket_UDP.recvfrom(2048)
-            #     # print(bufferUDP)
-            #     if bufferUDP:
-            #         message = bufferUDP.decode()
+            print("hiii im here")
+            modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
+            print(modifiedMessage.decode())
+            # if bufferUDP:
+            # message = bufferUDP.decode()
             #         # print(message)
             #         if message.startswith("<download>"):
             #             # receive file size
