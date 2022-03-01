@@ -1,42 +1,55 @@
 import os
+import pickle
+import time
+import timeit
 from _thread import start_new_thread
-from socket import *
 import sys  # In order to terminate the program
+from socket import *
+
+
+class Chunk(object):
+    def __init__(self):
+        self.checksum = 0
+        self.data = ""
+        self.NAck = False
 
 
 class Server:
+    # Given server port
+    server_port = 50000
+    # choosing type of protocol
+    # af_inet- Ivp4
+    # SOCK_STREAM = TCP
+    server_socket_TCP = socket(AF_INET, SOCK_STREAM)
+
+    # SOCK_DGRAM = UDP
+    server_socket_UDP = socket(AF_INET, SOCK_DGRAM)
+
     # client's Port: user's name
     names = {55000: str, 55001: str, 55002: str, 55003: str, 55004: str, 55005: str,
              55006: str, 55007: str, 55008: str, 55009: str, 55010: str, 55011: str,
              55012: str, 55013: str, 55014: str, 55015: str}
 
-    # name: [ip, port, connection, [["neta","hi"], ["reut","hi"], ["neta","how you doing"], ... "]]
+    # name: [ip, port, tcp_connection, [["neta","hi"], ["reut","hi"], ["neta","how you doing"], ... "]]
     users = {}
-
+    packet = {}
     online_users = 0
 
     def __init__(self):
-        # Given server port
-        server_port = 50000
-        # choosing type of protocol
-        # af_inet- Ivp4
-        # SOCK_STREAM = TCP
-        server_socket = socket(AF_INET, SOCK_STREAM)
 
         # bind socket to a specific address and port
         # '' means listen to all ip's
-
-        server_socket.bind(('', server_port))
+        self.server_socket_TCP.bind(('', self.server_port))
 
         # define at least 5 connections
-        server_socket.listen(5)
+        self.server_socket_TCP.listen(5)
 
         print("Ready to serve!")
 
         while True:
             # connectionSocket is the socket after the connection has been accepted
             # addr[0]= client's ip, addr[1]= client's port
-            connection_socket, addr = server_socket.accept()
+            connection_socket, addr = self.server_socket_TCP.accept()
             connection_socket.send("<connection_established>".encode())
             Server.online_users = int(Server.online_users) + 1
             start_new_thread(Server.multi_threaded_client, (self, connection_socket, addr[0], addr[1]))
@@ -124,9 +137,64 @@ class Server:
         files = files + "<end>"
         connection_socket.send(files.encode())
 
+    # TODO: Find checksum for each chunk
+    def checksum(self, chunk):
+        pass
+
+    def send_file(self, server_socket_UDP, ip, file_name, port, file_bytes):
+        with open(file_name, 'rb') as f:
+            print("in send file 1")
+            # check if the client received file size - ACK, if not server resend it again after 10 sec
+            server_socket_UDP.settimeout(100)
+            while True:
+                try:
+                    # send file size to client
+                    server_socket_UDP.sendto("HIIII".encode(), (ip, port))
+                    # server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
+                    ACK, address = server_socket_UDP.recvfrom(1024)
+                    break
+                except Exception as e:
+                    print(e.__traceback__)
+                    server_socket_UDP.sendto(str(file_bytes).encode(), (ip, port))
+            data = f.read(1024)
+            # divide data to chunks
+            while data:
+                chunk = Chunk()
+                chunk.data = data
+                chunk.checksum = self.checksum(chunk.data)
+                chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
+                flag = True
+                while flag:
+                    flag = False
+                    try:
+                        server_socket_UDP.sendto(chunk_in_binary, (ip, port))
+                        ACK, address = server_socket_UDP.recvfrom(2048)
+                        print(ACK)
+                        break
+                    except Exception as e:
+                        flag = True
+                data = f.read(2048)
+
     # Download - UDP
-    def download(self, connection_socket):
-        return "h"
+    def download(self, connection_socket, ip, file_name, port):
+        # Bytes num of file
+        file_bytes = os.path.getsize(file_name)
+
+        # TODO: CHECK 64after send to
+        # after send file
+        if file_bytes >= (1 << 64):
+            connection_socket.send('<too_big>'.encode())
+        # opening UDP connection
+        self.server_socket_UDP.bind(('', self.server_port))
+        print("The server is ready to receive...")
+        while True:
+            message, clientAddress = self.server_socket_UDP.recvfrom(2048)
+            print("Get from client:", message)
+            modifiedMessage = message.upper()
+            self.server_socket_UDP.sendto(modifiedMessage, clientAddress)
+        # print(buffer)
+        # self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes)
+        # print("after send file")
 
     def proceed(self, connection_socket):
         return "h"
@@ -146,7 +214,7 @@ class Server:
         elif action == "get_list_file":
             Server.get_list_file(self, connection_socket)
         elif action == "download":
-            Server.download(self, connection_socket)
+            Server.download(self, connection_socket, ip, rest_of_msg, port)
         elif action == "proceed":
             Server.proceed(self, connection_socket)
         else:

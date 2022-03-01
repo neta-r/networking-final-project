@@ -4,16 +4,18 @@ import threading
 from socket import *
 from tkinter import *
 
-
-def rgb_hack(rgb):
-    return "#%02x%02x%02x" % rgb
+#
+# def rgb_hack(rgb):
+#     return "#%02x%02x%02x" % rgb
 
 
 class Client:
-    client_socket = SocketKind
+    client_socket_TCP = SocketKind
+    client_socket_UDP = SocketKind
     name = str
     port = int
-
+    server_name = 'localhost'
+    SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
 
     def __init__(self):
@@ -43,12 +45,14 @@ class Client:
         # sign_in_button = Button(window, text="Sign In", fg='white', bg='pink', relief=RIDGE, font=("arial", 12, "bold"))
         # sign_in_button.place(x=165, y=230)
         # window.mainloop()
+        # self.UDP_connection = False
+
         self.get_port()
         while True:
             self.name = input("Input username: ")
             connect_request = "<connect><" + self.name + ">"
             # clientSocket.send(bytes(sentence, encoding="UTF-8"))
-            self.client_socket.send(connect_request.encode())
+            self.client_socket_TCP.send(connect_request.encode())
             print("Thank you!\n")
             break
         Client.menu(self)
@@ -58,7 +62,6 @@ class Client:
         t1.start()
 
     def get_port(self):
-        server_name = '127.0.0.1'
         while True:
             client_input = input("Enter port number between 55000 to 55015: ")
             # checking if input is a number
@@ -68,10 +71,11 @@ class Client:
                 if 55000 <= self.port <= 55016:
                     # checking if specific port is available
                     try:
-                        SERVER_ADDRESS = (server_name, 50000)
-                        self.client_socket = socket(AF_INET, SOCK_STREAM)
-                        self.client_socket.bind(('0.0.0.0', self.port))
-                        self.client_socket.connect(SERVER_ADDRESS)
+                        self.client_socket_TCP = socket(AF_INET, SOCK_STREAM)
+                        self.client_socket_TCP.bind(('localhost', self.port))
+                        self.client_socket_UDP = socket(AF_INET, SOCK_DGRAM)
+                        # self.client_socket_UDP.bind(('localhost', self.port))
+                        self.client_socket_TCP.connect(self.SERVER_ADDRESS)
                         break
                     except OSError as e:
                         # error number 10048 = Port is taken,
@@ -84,39 +88,51 @@ class Client:
                 print("Please enter numeric value!\n")
 
     def get_users(self):
-        self.client_socket.send("<get_users>".encode())
+        self.client_socket_TCP.send("<get_users>".encode())
 
     def disconnect(self):
-        self.client_socket.send("<disconnect>".encode())
+        self.client_socket_TCP.send("<disconnect>".encode())
         exit()
 
     def set_msg(self):
         other_user = input("Input username: ")
         msg = input("Input message: ")
         set_msg_request = "<set_msg><" + other_user + "><" + msg + ">"
-        self.client_socket.send(set_msg_request.encode())
+        self.client_socket_TCP.send(set_msg_request.encode())
 
     def set_msg_all(self):
         msg = input("Input message: ")
         set_msg_all_request = "<set_msg_all><" + msg + ">"
-        self.client_socket.send(set_msg_all_request.encode())
+        self.client_socket_TCP.send(set_msg_all_request.encode())
 
     def get_list_file(self):
         # <get_list_file>
-        self.client_socket.send("<get_list_file>".encode())
+        self.client_socket_TCP.send("<get_list_file>".encode())
 
     # Download - TCP
     def download(self):
-        if len(self.dir_files) == 0:
-            print("Choose action 5 first\n")
-            return
+        # Make sure client saw file list
+        print("This are your available files:\n")
+        self.client_socket_TCP.send("<get_list_file>".encode())
+
+        time.sleep(1)
         choose_file = input("Please enter requested file name: ")
         while choose_file not in self.dir_files:
             print("Please enter valid file name\n")
             choose_file = input("Please enter requested file name or 'q' to quit: ")
             if choose_file == 'q':
                 break
-        self.client_socket.send(("<download><" + choose_file + ">").encode())
+        # format - <download><file_name>
+        self.client_socket_TCP.send(("<download><" + choose_file + ">").encode())
+        # Open UDP connection
+        # self.client_socket_UDP.connect(self.SERVER_ADDRESS)
+        # self.client_socket_UDP.sendto("ACK".encode(), )
+        message = input('Input lowercase sentence:')
+        self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
+        modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
+        print("Get from server:", modifiedMessage.decode())
+
+        # self.UDP_connection = True
 
     def proceed(self):
         return "h"
@@ -151,8 +167,22 @@ class Client:
 
     def receive_msgs(self):
         while True:
+            # if self.UDP_connection:
+            #     print("hiii im here")
+            #     bufferUDP, addr = self.client_socket_UDP.recvfrom(2048)
+            #     # print(bufferUDP)
+            #     if bufferUDP:
+            #         message = bufferUDP.decode()
+            #         # print(message)
+            #         if message.startswith("<download>"):
+            #             # receive file size
+            #             file_size = message[11:]
+            #             print("Size is: " + file_size)
+            #             self.client_socket_UDP.sendto("ACK".encode(), self.SERVER_ADDRESS)
+            #             print("File sent successfully! :)")
             # message="<name><msg>"
-            buffer = self.client_socket.recv(1024)
+            buffer = self.client_socket_TCP.recv(1024)
+            print(buffer)
             if buffer:
                 message = buffer.decode()
                 # get users
@@ -179,7 +209,7 @@ class Client:
                 # disconnect
                 elif message.startswith("<disconnected>"):
                     print("Successfully disconnected\n")
-                    self.client_socket.close()
+                    self.client_socket_TCP.close()
                     exit()
 
                 # send message
@@ -212,12 +242,14 @@ class Client:
                         print(file + "\n")
                         self.dir_files.append(file)
                         index1 = file.rfind("\\")
-                        self.dir_files.append(file[index1+1:])
+                        self.dir_files.append(file[index1 + 1:])
                         message = message[index + 2:]
+                elif message.startswith("<too_big>"):
+                    print("The chosen file bis too large\n")
 
     def actions(self):
         while True:
-            time.sleep(1.5)
+            time.sleep(1)
             client_input = input("Please select action: \n")
             # checking if input is a number
             try:
