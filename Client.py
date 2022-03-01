@@ -46,7 +46,6 @@ class Client:
         # sign_in_button = Button(window, text="Sign In", fg='white', bg='pink', relief=RIDGE, font=("arial", 12, "bold"))
         # sign_in_button.place(x=165, y=230)
         # window.mainloop()
-        self.UDP_connection = False
 
         self.get_port()
         while True:
@@ -59,7 +58,9 @@ class Client:
         Client.menu(self)
         t1 = threading.Thread(target=Client.actions, args=(self,))
         t2 = threading.Thread(target=Client.receive_msgs, args=(self,))
+        t3 = threading.Thread(target=Client.receive_udp_msgs, args=(self,))
         t2.start()
+        t3.start()
         t1.start()
 
     def get_port(self):
@@ -75,7 +76,7 @@ class Client:
                         self.client_socket_TCP = socket(AF_INET, SOCK_STREAM)
                         self.client_socket_TCP.bind(('localhost', self.port))
                         self.client_socket_UDP = socket(AF_INET, SOCK_DGRAM)
-                        # self.client_socket_UDP.bind(('localhost', self.port))
+                        self.client_socket_UDP.bind(('localhost', self.port))
                         self.client_socket_TCP.connect(self.SERVER_ADDRESS)
                         break
                     except OSError as e:
@@ -130,10 +131,9 @@ class Client:
         # self.client_socket_UDP.sendto("ACK".encode(), )
         message = input('Input lowercase sentence:')
         self.client_socket_UDP.sendto(message.encode(), self.SERVER_ADDRESS)
+
         # modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
         # print("Get from server:", modifiedMessage.decode())
-
-        self.UDP_connection = True
 
     def proceed(self):
         return "h"
@@ -166,24 +166,17 @@ class Client:
         print("6- download file\n")
         print("7- proceed\n")
 
+    def receive_udp_msgs(self):
+        while True:
+            modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
+            print("Get from server:", modifiedMessage.decode())
+            time.sleep(2)
+            break
+        self.client_socket_UDP.close()
+
     def receive_msgs(self):
         while True:
-            # if self.UDP_connection:
-            print("hiii im here")
-            modifiedMessage, serverAddress = self.client_socket_UDP.recvfrom(2048)
-            print(modifiedMessage.decode())
-            # if bufferUDP:
-            # message = bufferUDP.decode()
-            #         # print(message)
-            #         if message.startswith("<download>"):
-            #             # receive file size
-            #             file_size = message[11:]
-            #             print("Size is: " + file_size)
-            #             self.client_socket_UDP.sendto("ACK".encode(), self.SERVER_ADDRESS)
-            #             print("File sent successfully! :)")
-            # message="<name><msg>"
             buffer = self.client_socket_TCP.recv(1024)
-            print(buffer)
             if buffer:
                 message = buffer.decode()
                 # get users
