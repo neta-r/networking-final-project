@@ -7,11 +7,10 @@ from socket import *
 from tkinter import *
 from Server import Chunk
 
-
 #
 # def rgb_hack(rgb):
 #     return "#%02x%02x%02x" % rgb
-
+users_names = []
 
 class Client:
     client_socket_TCP = SocketKind
@@ -52,14 +51,19 @@ class Client:
 
         self.get_port()
         while True:
+            print(users_names)
             self.name = input("Input username: ")
-            connect_request = "<connect><" + self.name + ">"
-            # clientSocket.send(bytes(sentence, encoding="UTF-8"))
-            self.client_socket_TCP.send(connect_request.encode())
-            self.client_socket_TCP.send("<get_list_file>".encode())
-            time.sleep(2)
-            print("Thank you!\n")
-            break
+            if self.name not in users_names:
+                users_names.append(self.name)
+                connect_request = "<connect><" + self.name + ">"
+                # clientSocket.send(bytes(sentence, encoding="UTF-8"))
+                self.client_socket_TCP.send(connect_request.encode())
+                self.client_socket_TCP.send("<get_list_file>".encode())
+                time.sleep(2)
+                print("Thank you!\n")
+                break
+            else:
+                print("This name is already taken!\n")
         Client.menu(self)
         t1 = threading.Thread(target=Client.actions, args=(self,))
         t2 = threading.Thread(target=Client.receive_msgs, args=(self,))
@@ -99,6 +103,9 @@ class Client:
 
     def disconnect(self):
         self.client_socket_TCP.send("<disconnect>".encode())
+        users_names.remove(self.name)
+        self.client_socket_TCP.close()
+        self.client_socket_UDP.close()
         exit()
 
     def set_msg(self):
@@ -113,9 +120,6 @@ class Client:
         self.client_socket_TCP.send(set_msg_all_request.encode())
 
     def get_list_file(self):
-        # TODO: להעיף
-        self.client_socket_TCP.send("<get_list_file>".encode())
-        time.sleep(2)
         for f in self.dir_files:
             if f.__contains__("\\"):
                 print(f + "\n")
@@ -220,7 +224,7 @@ class Client:
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     file_size = self.receive_half_file()
                     print("User " + self.name + " downloaded 100% out of file. Last byte is: " +
-                        str(file_size) * 2)
+                          str(file_size * 2))
 
     def receive_msgs(self):
         while True:

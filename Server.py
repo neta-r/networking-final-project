@@ -13,7 +13,6 @@ class Chunk(object):
     def __init__(self):
         self.checksum = 0
         self.data = ""
-        self.NAck = False
 
 
 class Server:
@@ -143,7 +142,6 @@ class Server:
         files = files + "<end>"
         connection_socket.send(files.encode())
 
-    # TODO: Find checksum for each chunk
     def checksum(self, chunk_data):
         md5_hash = hashlib.md5()
         md5_hash.update(chunk_data)
@@ -205,7 +203,6 @@ class Server:
         # sending client half of the file (rounded down)
         self.send_file(ip, file_name, port, round(file_bytes / 2))
 
-    # TODO: Check 2 users download file together
     def proceed(self, ip, port):
         file_name = ""
         clients_name = self.names[port]
@@ -226,7 +223,7 @@ class Server:
         self.send_and_ack("<second>".encode(), ip, port)
         # sending client half of the file (rounded up)
         self.send_file(ip, file_name, port, int(math.ceil(file_bytes/2)))
-        # TODO: deleting user name from file list after all file was sent
+        self.files[file_name][1].remove(clients_name)
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):
         if action == "connect":
