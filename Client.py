@@ -7,10 +7,11 @@ from socket import *
 from tkinter import *
 from Server import Chunk
 
+
 #
 # def rgb_hack(rgb):
 #     return "#%02x%02x%02x" % rgb
-users_names = []
+
 
 class Client:
     client_socket_TCP = SocketKind
@@ -20,6 +21,7 @@ class Client:
     server_name = '192.168.1.36'
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
+    flag = False
 
     def __init__(self):
         # window = Tk()
@@ -50,26 +52,22 @@ class Client:
         # window.mainloop()
 
         self.get_port()
-        while True:
-            print(users_names)
-            self.name = input("Input username: ")
-            if self.name not in users_names:
-                users_names.append(self.name)
-                connect_request = "<connect><" + self.name + ">"
-                # clientSocket.send(bytes(sentence, encoding="UTF-8"))
-                self.client_socket_TCP.send(connect_request.encode())
-                self.client_socket_TCP.send("<get_list_file>".encode())
-                time.sleep(2)
-                print("Thank you!\n")
-                break
-            else:
-                print("This name is already taken!\n")
-        Client.menu(self)
+
         t1 = threading.Thread(target=Client.actions, args=(self,))
         t2 = threading.Thread(target=Client.receive_msgs, args=(self,))
         t3 = threading.Thread(target=Client.receive_udp_msgs, args=(self,))
         t2.start()
         t3.start()
+
+        while True:
+            self.name = input("Input username: ")
+            connect_request = "<connect><" + self.name + ">"
+            # clientSocket.send(bytes(sentence, encoding="UTF-8"))
+            self.client_socket_TCP.send(connect_request.encode())
+            time.sleep(1)
+            if self.flag:
+                break
+        Client.menu(self)
         t1.start()
 
     def get_port(self):
@@ -103,7 +101,6 @@ class Client:
 
     def disconnect(self):
         self.client_socket_TCP.send("<disconnect>".encode())
-        users_names.remove(self.name)
         self.client_socket_TCP.close()
         self.client_socket_UDP.close()
         exit()
@@ -248,9 +245,20 @@ class Client:
                         message = message[index + 1:]
                     print(stringUser[0:-2])
 
-                # connect
+                # connect to socket
                 elif message == "<connection_established>":
                     print("connection established\n")
+
+                # connected to chat
+                elif message == "<connected_to_chat>":
+                    self.flag = True
+                    self.client_socket_TCP.send("<get_list_file>".encode())
+                    time.sleep(2)
+                    print("Thank you!\n")
+
+                elif message == "<name_taken>":
+                    self.flag = False
+                    print("name is already taken!\n")
 
                 # disconnect
                 elif message.startswith("<disconnected>"):
@@ -293,7 +301,6 @@ class Client:
                     print("The chosen file bis too large\n")
 
     def actions(self):
-        self.client_socket_TCP.send("<get_list_file>".encode())
         while True:
             time.sleep(1)
             client_input = input("Please select action: \n")

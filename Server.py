@@ -80,10 +80,10 @@ class Server:
         if name not in Server.users:
             Server.names[port] = name
             Server.users[name] = [ip, port, connection_socket, ""]
-            connection_socket.send('<connected>'.encode())
+            connection_socket.send('<connected_to_chat>'.encode())
             print(name + " connected")
         else:
-            connection_socket.send('<available_name>'.encode())
+            connection_socket.send('<name_taken>'.encode())
 
     # message_send- is the massage according to protocol
     # online_users_print- will display on the screen
