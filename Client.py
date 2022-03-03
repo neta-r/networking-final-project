@@ -56,7 +56,8 @@ class Client:
             connect_request = "<connect><" + self.name + ">"
             # clientSocket.send(bytes(sentence, encoding="UTF-8"))
             self.client_socket_TCP.send(connect_request.encode())
-            time.sleep(0.5)
+            self.client_socket_TCP.send("<get_list_file>".encode())
+            time.sleep(2)
             print("Thank you!\n")
             break
         Client.menu(self)
@@ -112,6 +113,9 @@ class Client:
         self.client_socket_TCP.send(set_msg_all_request.encode())
 
     def get_list_file(self):
+        # TODO: להעיף
+        self.client_socket_TCP.send("<get_list_file>".encode())
+        time.sleep(2)
         for f in self.dir_files:
             if f.__contains__("\\"):
                 print(f + "\n")
@@ -146,7 +150,7 @@ class Client:
         self.client_socket_TCP.send(("<download><" + choose_file + ">").encode())
 
     def proceed(self):
-        return "h"
+        self.client_socket_UDP.sendto("<proceed>".encode(), self.SERVER_ADDRESS)
 
     def switcher(self, action):
         if action == 1:
@@ -183,26 +187,23 @@ class Client:
         return digest
 
     def receive_half_file(self):
+        # receiving file size
         message, serverAddress = self.client_socket_UDP.recvfrom(2048)
-        if message.startswith("<download>".encode()):
-            file_size = message[10:]
-            str_file_size = str(file_size)
-            string_file_size = str_file_size[2:-1]
-            self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+        file_size = float(message.decode())
+        self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
 
-            count_bytes = 0
-            while True:
-                bytes_read = self.client_socket_UDP.recv(2048)
-                data_read = pickle.loads(bytes_read)
-                # print(data_read.data)
-                receive_checksum = self.checksum(data_read.data)
-                if receive_checksum == data_read.checksum:
-                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                    count_bytes = count_bytes + len(data_read.data)
-                if count_bytes == file_size:
-                    self.client_socket_UDP.close()
-                    break
-            return str_file_size
+        count_bytes = 0
+        while True:
+            bytes_read = self.client_socket_UDP.recv(2048)
+            data_read = pickle.loads(bytes_read)
+            # print(data_read.data)
+            receive_checksum = self.checksum(data_read.data)
+            if receive_checksum == data_read.checksum:
+                self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                count_bytes = count_bytes + len(data_read.data)
+            if count_bytes >= file_size:
+                break
+        return file_size
 
     def receive_udp_msgs(self):
         while True:
@@ -213,13 +214,13 @@ class Client:
                 if message.startswith("<first>".encode()):
                     # sending server ack on "<first>" msg
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                    string_file_size = self.receive_half_file()
-                    print("User " + self.name + " downloaded 50% out of file. Last byte is: " + string_file_size)
-                    # TODO: implement "Press To Proceed"
-                    self.client_socket_UDP.sendto("<proceed>".encode(), serverAddress)
-                    string_file_size = self.receive_half_file()
-                    print("User " + self.name + " downloaded 100% out of file. Last byte is: " + str(
-                        int(string_file_size) * 2))
+                    file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 50% out of file. Last byte is: " + str(file_size))
+                if message.startswith("<second>".encode()):
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 100% out of file. Last byte is: " +
+                        str(file_size) * 2)
 
     def receive_msgs(self):
         while True:

@@ -1,5 +1,6 @@
 import os
 import pickle
+import math
 import time
 import timeit
 from _thread import start_new_thread
@@ -40,7 +41,6 @@ class Server:
     files = {}
 
     def __init__(self):
-
 
         cwd = os.getcwd()
         for f in os.listdir(cwd):
@@ -163,19 +163,24 @@ class Server:
                 self.server_socket_UDP.sendto(binary_msg, (ip, port))
 
     def send_file(self, ip, file_name, port, file_bytes):
-        # <first><download - [:1/2]>nvnvnvn<second><download[1/2:]>jfbvkjsbfl
+        # <first><file_size - [:1/2]>nvnvnvn<second><file_size[1/2:]>jfbvkjsbfl
         with open(file_name, 'rb') as f:
-            msg = ("<download>" + str(file_bytes)).encode()
+            msg = str(file_bytes).encode()
             self.send_and_ack(msg, ip, port)
-            # divide data to chunks
-            data = f.read(1024)
-            while data:
+            left_to_send = file_bytes
+            while left_to_send > 0:
+                if left_to_send>1024:
+                    # divide data to chunks
+                    data = f.read(1024)
+                    left_to_send -= 1024
+                else:
+                    data = f.read(left_to_send)
+                    left_to_send = 0
                 chunk = Chunk()
                 chunk.data = data
                 chunk.checksum = self.checksum(chunk.data)
                 chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
                 self.send_and_ack(chunk_in_binary, ip, port)
-                data = f.read(2048)
 
     # Download - UDP
     def download(self, connection_socket, ip, file_name, port):
@@ -197,8 +202,8 @@ class Server:
 
         # sending the client a signal to enter his receiving file function
         self.send_and_ack("<first>".encode(), ip, port)
-        # sending client half of the file
-        self.send_file(ip, file_name, port, file_bytes / 2)
+        # sending client half of the file (rounded down)
+        self.send_file(ip, file_name, port, round(file_bytes / 2))
 
     # TODO: Check 2 users download file together
     def proceed(self, ip, port):
@@ -213,7 +218,10 @@ class Server:
         # checking if client pressed download before pressing proceed
         if len(file_name) == 0:
             self.send_and_ack("<press_download_first>".encode(), ip, port)
-        self.send_file(ip, file_name, port, self.files[file_name][0])
+
+        file_bytes = self.files[file_name][0]
+        # sending client half of the file (rounded up)
+        self.send_file(ip, file_name, port, int(math.ceil(file_bytes/2)))
         # TODO: deleting user name from file list after all file was sent
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):
