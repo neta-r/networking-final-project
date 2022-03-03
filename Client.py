@@ -8,47 +8,15 @@ from socket import *
 from Server import Chunk
 
 
-#
-# def rgb_hack(rgb):
-#     return "#%02x%02x%02x" % rgb
-
-
 class Client:
     name = str
     port = int
-    server_name = 'localhost'
+    server_name = '10.0.2.15'
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
     flag = False
 
     def __init__(self):
-        # window = Tk()
-        # window.title("Login")
-        # window.geometry("400x300")
-        # window.config(bg='#EEBAC6')
-
-        # welcome_Label = Label(window, text=" Welcome to our chat! ", fg='pink', bg='white', relief=GROOVE,
-        #                       font=("arial", 12, "bold"))
-        # welcome_Label.place(relx=0.5, rely=0.1, anchor=CENTER)
-        #
-        # insert_port_label = Label(window, text="Port Number: ", fg='white', bg='#EEBAC6', relief=FLAT,
-        #                           font=("arial", 12, "bold"))
-        # insert_port_label.place(relx=0.05, rely=0.3, anchor=W)
-        #
-        # port_entry = Entry(window, bd=5)
-        # port_entry.pack(side=RIGHT)
-        #
-        # insert_username_label = Label(window, text="User Name: ", fg='white', bg='#EEBAC6', relief=FLAT,
-        #                               font=("arial", 12, "bold"))
-        # insert_username_label.place(relx=0.05, rely=0.5, anchor=W)
-        #
-        # username_entry = Entry(window, bd=5)
-        # username_entry.pack(side=RIGHT)
-        #
-        # sign_in_button = Button(window, text="Sign In", fg='white', bg='pink', relief=RIDGE, font=("arial", 12, "bold"))
-        # sign_in_button.place(x=165, y=230)
-        # window.mainloop()
-
         self.get_port()
 
         t1 = threading.Thread(target=Client.actions, args=(self,))
@@ -81,7 +49,7 @@ class Client:
                         self.client_socket_TCP = socket(AF_INET, SOCK_STREAM)
                         self.client_socket_TCP.bind((self.server_name, self.port))
                         self.client_socket_UDP = socket(AF_INET, SOCK_DGRAM)
-                        self.client_socket_UDP.bind((self.server_name, 40000))
+                        self.client_socket_UDP.bind((self.server_name, self.port))
                         self.client_socket_TCP.connect(self.SERVER_ADDRESS)
                         break
                     except OSError as e:

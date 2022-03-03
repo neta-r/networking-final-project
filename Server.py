@@ -48,7 +48,7 @@ class Server:
                 self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
 
         self.server_socket_TCP.bind(('', self.server_port))
-        self.server_socket_UDP.bind(('', 40000))
+        self.server_socket_UDP.bind(('', self.server_port))
 
         # define at least 5 connections
         self.server_socket_TCP.listen(5)
