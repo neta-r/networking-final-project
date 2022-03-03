@@ -236,9 +236,6 @@ class Client:
                 elif message.startswith("<message_to_yourself>"):
                     print("You can't send a message to yourself\n")
 
-                elif message.startswith("<msg_sent>"):
-                    print("Message sent successfully!\n")
-
                 elif message.startswith("<invalid_name>"):
                     print("The name you chose is not in the chatroom!\n")
 
@@ -250,7 +247,7 @@ class Client:
                     message = message[6:]
                     index = message.find(">")
                     name = message[0:index]
-                    msg = message[index + 2:-1]
+                    msg = message[index+2:-1]
                     print("\n" + name + ": " + msg)
 
                 # list_file
