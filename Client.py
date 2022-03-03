@@ -253,7 +253,7 @@ class Client:
                 elif message == "<connected_to_chat>":
                     self.flag = True
                     self.client_socket_TCP.send("<get_list_file>".encode())
-                    time.sleep(2)
+                    time.sleep(1)
                     print("Thank you!\n")
 
                 elif message == "<name_taken>":

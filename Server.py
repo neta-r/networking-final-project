@@ -189,9 +189,9 @@ class Server:
                 file_name = f
         # Bytes num of file
         file_bytes = self.files[file_name][0]
-        # TODO: CHECK 64 after send to
-        # after send file
-        if file_bytes >= (1 << 64):
+        # 65536 bytes = 64 kb
+        # 1024 byte = 1 kb
+        if file_bytes >= 65536:
             connection_socket.send('<too_big>'.encode())
             return
         # adding client's name to files list
