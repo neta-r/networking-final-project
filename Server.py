@@ -9,7 +9,6 @@ from socket import *
 import hashlib
 
 
-
 class Chunk(object):
     def __init__(self):
         self.checksum = 0
@@ -41,12 +40,6 @@ class Server:
     files = {}
 
     def __init__(self):
-
-        cwd = os.getcwd()
-        for f in os.listdir(cwd):
-            if os.path.isfile(os.path.join(cwd, f)):
-                self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
-
         self.server_socket_TCP.bind(('', self.server_port))
         self.server_socket_UDP.bind(('', self.server_port))
 
@@ -137,10 +130,14 @@ class Server:
         connection_socket.send("<msg_sent>".encode())
 
     def get_list_file(self, connection_socket):
+        cwd = os.getcwd()
+        for f in os.listdir(cwd):
+            if os.path.isfile(os.path.join(cwd, f)) and f not in self.files:
+                self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
+
         files = "<file_lst>"
         for file in self.files:
             files = files + "<" + file + ">"
-            # print(file + "\n")
         files = files + "<end>"
         connection_socket.send(files.encode())
 
@@ -170,7 +167,7 @@ class Server:
             self.send_and_ack(msg, ip, port)
             left_to_send = file_bytes
             while left_to_send > 0:
-                if left_to_send>1024:
+                if left_to_send > 1024:
                     # divide data to chunks
                     data = f.read(1024)
                     left_to_send -= 1024
@@ -224,7 +221,7 @@ class Server:
         # sending the client a signal to enter his receiving file function
         self.send_and_ack("<second>".encode(), ip, port)
         # sending client half of the file (rounded up)
-        self.send_file(ip, file_name, port, int(math.ceil(file_bytes/2)))
+        self.send_file(ip, file_name, port, int(math.ceil(file_bytes / 2)))
         self.files[file_name][1].remove(clients_name)
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):

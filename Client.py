@@ -4,6 +4,7 @@ import pickle
 import time
 import threading
 from socket import *
+
 # from tkinter import *
 from Server import Chunk
 
@@ -11,7 +12,7 @@ from Server import Chunk
 class Client:
     name = str
     port = int
-    server_name = '10.0.2.15'
+    server_name = '127.0.0.1'
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
     flag = False
@@ -83,14 +84,13 @@ class Client:
         self.client_socket_TCP.send(set_msg_all_request.encode())
 
     def get_list_file(self):
-        for f in self.dir_files:
-            if f.__contains__("\\"):
-                print(f + "\n")
+        self.client_socket_TCP.send("<get_list_file>".encode())
 
     # checking if name is valid and if it is the long name, returns the short name
     def is_valid(self, file_name):
         for f in self.dir_files:
-            if file_name.__contains__(f) and not f.__contains__("\\"):
+            # windows - if file_name.__contains__(f) and not f.__contains__("\\"):
+            if file_name.__contains__(f) and not f.__contains__("/"):
                 return f
         return ''
 
@@ -99,6 +99,7 @@ class Client:
         # Make sure client saw file list
         print("This are your available files:\n")
         self.get_list_file()
+        time.sleep(1)
         choose_file = input("Please enter requested file name: ")
         choose_file = self.is_valid(choose_file)
         # invalid name
@@ -218,7 +219,6 @@ class Client:
                 # connected to chat
                 elif message == "<connected_to_chat>":
                     self.flag = True
-                    self.client_socket_TCP.send("<get_list_file>".encode())
                     time.sleep(1)
                     print("Thank you!\n")
 
@@ -259,9 +259,12 @@ class Client:
                     while not message.startswith("end"):
                         index = message.find(">")
                         file = message[0:index]
-                        self.dir_files.append(file)
-                        index1 = file.rfind("\\")
-                        self.dir_files.append(file[index1 + 1:])
+                        if file not in self.dir_files:
+                            self.dir_files.append(file)
+                            print(file + "\n")
+                            # windows - index1 = file.rfind("\\")
+                            index1 = file.rfind("/")
+                            self.dir_files.append(file[index1 + 1:])
                         message = message[index + 2:]
                 elif message.startswith("<too_big>"):
                     print("The chosen file bis too large\n")
