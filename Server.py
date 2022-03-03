@@ -3,10 +3,11 @@ import pickle
 import math
 import time
 import timeit
-from _thread import start_new_thread
+import threading
 import sys  # In order to terminate the program
 from socket import *
 import hashlib
+
 
 
 class Chunk(object):
@@ -47,7 +48,7 @@ class Server:
                 self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
 
         self.server_socket_TCP.bind(('', self.server_port))
-        self.server_socket_UDP.bind(('', self.server_port))
+        self.server_socket_UDP.bind(('', 40000))
 
         # define at least 5 connections
         self.server_socket_TCP.listen(5)
@@ -60,7 +61,8 @@ class Server:
             connection_socket, addr = self.server_socket_TCP.accept()
             connection_socket.send("<connection_established>".encode())
             Server.online_users = int(Server.online_users) + 1
-            start_new_thread(Server.multi_threaded_client, (self, connection_socket, addr[0], addr[1]))
+            t = threading.Thread(target=Server.multi_threaded_client, args=(self, connection_socket, addr[0], addr[1]))
+            t.start()
 
     # this function is executed whenever a thread is being activated - listens to tcp messages
     def multi_threaded_client(self, connection_socket, ip, port):

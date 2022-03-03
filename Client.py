@@ -4,7 +4,7 @@ import pickle
 import time
 import threading
 from socket import *
-from tkinter import *
+# from tkinter import *
 from Server import Chunk
 
 
@@ -14,11 +14,9 @@ from Server import Chunk
 
 
 class Client:
-    client_socket_TCP = SocketKind
-    client_socket_UDP = SocketKind
     name = str
     port = int
-    server_name = '192.168.1.36'
+    server_name = 'localhost'
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
     flag = False
@@ -81,9 +79,9 @@ class Client:
                     # checking if specific port is available
                     try:
                         self.client_socket_TCP = socket(AF_INET, SOCK_STREAM)
-                        self.client_socket_TCP.bind(('192.168.1.36', self.port))
+                        self.client_socket_TCP.bind((self.server_name, self.port))
                         self.client_socket_UDP = socket(AF_INET, SOCK_DGRAM)
-                        self.client_socket_UDP.bind(('192.168.1.36', self.port))
+                        self.client_socket_UDP.bind((self.server_name, 40000))
                         self.client_socket_TCP.connect(self.SERVER_ADDRESS)
                         break
                     except OSError as e:
