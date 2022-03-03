@@ -7,6 +7,7 @@ from socket import *
 from tkinter import *
 from Server import Chunk
 
+
 #
 # def rgb_hack(rgb):
 #     return "#%02x%02x%02x" % rgb
@@ -17,7 +18,7 @@ class Client:
     client_socket_UDP = SocketKind
     name = str
     port = int
-    server_name = 'localhost'
+    server_name = '192.168.1.36'
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
 
@@ -55,6 +56,7 @@ class Client:
             connect_request = "<connect><" + self.name + ">"
             # clientSocket.send(bytes(sentence, encoding="UTF-8"))
             self.client_socket_TCP.send(connect_request.encode())
+            time.sleep(0.5)
             print("Thank you!\n")
             break
         Client.menu(self)
@@ -76,9 +78,9 @@ class Client:
                     # checking if specific port is available
                     try:
                         self.client_socket_TCP = socket(AF_INET, SOCK_STREAM)
-                        self.client_socket_TCP.bind(('localhost', self.port))
+                        self.client_socket_TCP.bind(('192.168.1.36', self.port))
                         self.client_socket_UDP = socket(AF_INET, SOCK_DGRAM)
-                        self.client_socket_UDP.bind(('localhost', self.port))
+                        self.client_socket_UDP.bind(('192.168.1.36', self.port))
                         self.client_socket_TCP.connect(self.SERVER_ADDRESS)
                         break
                     except OSError as e:
@@ -110,22 +112,36 @@ class Client:
         self.client_socket_TCP.send(set_msg_all_request.encode())
 
     def get_list_file(self):
-        # <get_list_file>
-        self.client_socket_TCP.send("<get_list_file>".encode())
+        for f in self.dir_files:
+            if f.__contains__("\\"):
+                print(f + "\n")
+
+    # checking if name is valid and if it is the long name, returns the short name
+    def is_valid(self, file_name):
+        for f in self.dir_files:
+            if file_name.__contains__(f) and not f.__contains__("\\"):
+                return f
+        return ''
 
     # Download - TCP
     def download(self):
         # Make sure client saw file list
         print("This are your available files:\n")
-        self.client_socket_TCP.send("<get_list_file>".encode())
-
-        time.sleep(1)
+        self.get_list_file()
         choose_file = input("Please enter requested file name: ")
-        while choose_file not in self.dir_files:
-            print("Please enter valid file name\n")
-            choose_file = input("Please enter requested file name or 'q' to quit: ")
-            if choose_file == 'q':
-                break
+        choose_file = self.is_valid(choose_file)
+        # invalid name
+        if not len(choose_file) > 0:
+            while True:
+                print("Invalid name\n")
+                choose_file = input("Please enter requested file name or 'q' to quit: ")
+                if choose_file == 'q':
+                    return
+                # if user chose the long name we'll find the short name and send it
+                choose_file = self.is_valid(choose_file)
+                if len(choose_file):
+                    break
+
         # format - <download><file_name>
         self.client_socket_TCP.send(("<download><" + choose_file + ">").encode())
 
@@ -198,7 +214,8 @@ class Client:
                     # TODO: implement "Press To Proceed"
                     self.client_socket_UDP.sendto("<proceed>".encode(), serverAddress)
                     string_file_size = self.receive_half_file()
-                    print("User " + self.name + " downloaded 100% out of file. Last byte is: "+str(int(string_file_size)*2))
+                    print("User " + self.name + " downloaded 100% out of file. Last byte is: " + str(
+                        int(string_file_size) * 2))
 
     def receive_msgs(self):
         while True:
@@ -259,7 +276,6 @@ class Client:
                     while not message.startswith("end"):
                         index = message.find(">")
                         file = message[0:index]
-                        print(file + "\n")
                         self.dir_files.append(file)
                         index1 = file.rfind("\\")
                         self.dir_files.append(file[index1 + 1:])
@@ -268,6 +284,7 @@ class Client:
                     print("The chosen file bis too large\n")
 
     def actions(self):
+        self.client_socket_TCP.send("<get_list_file>".encode())
         while True:
             time.sleep(1)
             client_input = input("Please select action: \n")

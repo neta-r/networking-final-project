@@ -32,16 +32,23 @@ class Server:
              55006: str, 55007: str, 55008: str, 55009: str, 55010: str, 55011: str,
              55012: str, 55013: str, 55014: str, 55015: str}
 
-    # name: [ip, port, tcp_connection, [["neta","hi"], ["reut","hi"], ["neta","how you doing"], ... "]]
+    # name: [ip, port, tcp_connection, udp_connection]
     users = {}
     packet = {}
     online_users = 0
+    files = {}
 
     def __init__(self):
 
         # bind socket to a specific address and port
         # '' means listen to all ip's
-        self.file_name = ""  # TODO: Change to Dictionary with users
+        cwd = os.getcwd()
+        only_files = [os.path.join(cwd, f) for f in os.listdir(cwd) if
+                      os.path.isfile(os.path.join(cwd, f))]
+        for f in os.listdir(cwd):
+            if os.path.isfile(os.path.join(cwd, f)):
+                self.files[os.path.join(cwd, f)] = []
+
         self.file_bytes = 0
         self.server_socket_TCP.bind(('', self.server_port))
 
@@ -131,11 +138,8 @@ class Server:
         connection_socket.send("<msg_sent>".encode())
 
     def get_list_file(self, connection_socket):
-        cwd = os.getcwd()
-        only_files = [os.path.join(cwd, f) for f in os.listdir(cwd) if
-                      os.path.isfile(os.path.join(cwd, f))]
         files = "<file_lst>"
-        for file in only_files:
+        for file in self.files:
             files = files + "<" + file + ">"
             # print(file + "\n")
         files = files + "<end>"
@@ -158,7 +162,6 @@ class Server:
             while True:
                 try:
                     # send file size to client
-                    # server_socket_UDP.sendto("HIIII".encode(), (ip, port))
                     server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
                     ACK, address = server_socket_UDP.recvfrom(1024)
                     print(ACK)
@@ -187,6 +190,10 @@ class Server:
 
     # Download - UDP
     def download(self, connection_socket, ip, file_name, port):
+        # turning short name to full name
+        for f in self.files:
+            if f.__contains__(file_name):
+                file_name=f
         # Bytes num of file
         file_bytes = os.path.getsize(file_name)
         print("file bytes is: " + str(file_bytes))
@@ -196,14 +203,17 @@ class Server:
             connection_socket.send('<too_big>'.encode())
             return
         # opening UDP connection
+        clients_name = self.names[port]
+        self.files[file_name].append(clients_name)
         self.server_socket_UDP.bind(('', self.server_port))
+        self.users[clients_name][3]=self.server_socket_UDP
         self.server_socket_UDP.sendto("<first>".encode(), (ip, port))
         self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes / 2)
 
     # TODO: Check 2 users download file together
     def proceed(self, ip, port):
         self.server_socket_UDP.sendto("<second>".encode(), (ip, port))
-        self.send_file(self.server_socket_UDP, ip, self.file_name, port, self.file_bytes / 2)
+        # self.send_file(self.server_socket_UDP, ip, self.file_name, port, self.file_bytes / 2)
         self.server_socket_UDP.close()
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):
