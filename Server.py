@@ -37,7 +37,7 @@ class Server:
     users = {}
     packet = {}
     online_users = 0
-    # file_name = (size, [user1,user2,..]
+    # file_name = (size, [user1,user2,..])
     files = {}
 
     def __init__(self):
@@ -46,6 +46,7 @@ class Server:
         for f in os.listdir(cwd):
             if os.path.isfile(os.path.join(cwd, f)):
                 self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
+
         self.server_socket_TCP.bind(('', self.server_port))
         self.server_socket_UDP.bind(('', self.server_port))
 
@@ -62,7 +63,7 @@ class Server:
             Server.online_users = int(Server.online_users) + 1
             start_new_thread(Server.multi_threaded_client, (self, connection_socket, addr[0], addr[1]))
 
-    # this function is executed whenever a thread is being activated
+    # this function is executed whenever a thread is being activated - listens to tcp messages
     def multi_threaded_client(self, connection_socket, ip, port):
         while True:
             # receiving other messages
@@ -190,7 +191,6 @@ class Server:
                 file_name = f
         # Bytes num of file
         file_bytes = self.files[file_name][0]
-        print("file bytes is: " + str(file_bytes))
         # TODO: CHECK 64 after send to
         # after send file
         if file_bytes >= (1 << 64):
@@ -207,19 +207,23 @@ class Server:
 
     # TODO: Check 2 users download file together
     def proceed(self, ip, port):
-        # sending the client a signal to enter his receiving file function
-        self.server_socket_UDP.sendto("<second>".encode(), (ip, port))
         file_name = ""
         clients_name = self.names[port]
-        for file, list_of_users in self.files:
-            if clients_name in list_of_users:
+
+        # finding file user want to proceed downloading
+        for file, val in self.files.items():
+            if clients_name in val[1]:
                 file_name = file
                 break
+
         # checking if client pressed download before pressing proceed
         if len(file_name) == 0:
             self.send_and_ack("<press_download_first>".encode(), ip, port)
 
         file_bytes = self.files[file_name][0]
+
+        # sending the client a signal to enter his receiving file function
+        self.send_and_ack("<second>".encode(), ip, port)
         # sending client half of the file (rounded up)
         self.send_file(ip, file_name, port, int(math.ceil(file_bytes/2)))
         # TODO: deleting user name from file list after all file was sent

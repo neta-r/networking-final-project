@@ -150,7 +150,7 @@ class Client:
         self.client_socket_TCP.send(("<download><" + choose_file + ">").encode())
 
     def proceed(self):
-        self.client_socket_UDP.sendto("<proceed>".encode(), self.SERVER_ADDRESS)
+        self.client_socket_TCP.sendto("<proceed>".encode(), self.SERVER_ADDRESS)
 
     def switcher(self, action):
         if action == 1:
@@ -201,7 +201,7 @@ class Client:
             if receive_checksum == data_read.checksum:
                 self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                 count_bytes = count_bytes + len(data_read.data)
-            if count_bytes >= file_size:
+            if count_bytes == file_size:
                 break
         return file_size
 
@@ -210,13 +210,13 @@ class Client:
             message, serverAddress = self.client_socket_UDP.recvfrom(2048)
             if message:
                 if message.startswith("<press_download_first>".encode()):
-                    print("You can't proceed because you are not downloading anything\n")
-                if message.startswith("<first>".encode()):
+                    print("You can't proceed because you are not downloading anything now\n")
+                elif message.startswith("<first>".encode()):
                     # sending server ack on "<first>" msg
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     file_size = self.receive_half_file()
                     print("User " + self.name + " downloaded 50% out of file. Last byte is: " + str(file_size))
-                if message.startswith("<second>".encode()):
+                elif message.startswith("<second>".encode()):
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     file_size = self.receive_half_file()
                     print("User " + self.name + " downloaded 100% out of file. Last byte is: " +
