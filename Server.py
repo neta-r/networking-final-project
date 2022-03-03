@@ -32,25 +32,22 @@ class Server:
              55006: str, 55007: str, 55008: str, 55009: str, 55010: str, 55011: str,
              55012: str, 55013: str, 55014: str, 55015: str}
 
-    # name: [ip, port, tcp_connection, udp_connection]
+    # name: [ip, port, tcp_connection]
     users = {}
     packet = {}
     online_users = 0
+    # file_name = (size, [user1,user2,..]
     files = {}
 
     def __init__(self):
 
-        # bind socket to a specific address and port
-        # '' means listen to all ip's
+
         cwd = os.getcwd()
-        only_files = [os.path.join(cwd, f) for f in os.listdir(cwd) if
-                      os.path.isfile(os.path.join(cwd, f))]
         for f in os.listdir(cwd):
             if os.path.isfile(os.path.join(cwd, f)):
-                self.files[os.path.join(cwd, f)] = []
-
-        self.file_bytes = 0
+                self.files[os.path.join(cwd, f)] = (os.path.getsize(f), [])
         self.server_socket_TCP.bind(('', self.server_port))
+        self.server_socket_UDP.bind(('', self.server_port))
 
         # define at least 5 connections
         self.server_socket_TCP.listen(5)
@@ -152,23 +149,24 @@ class Server:
         digest = md5_hash.hexdigest()
         return digest
 
-    def send_file(self, server_socket_UDP, ip, file_name, port, file_bytes):
-        # <first><download - [0:1/2]>nvnvnvn<proceed><download[1/2:]>jfbvkjsbfl
+    def send_and_ack(self, binary_msg, ip, port):
+        self.server_socket_UDP.settimeout(100)
+        # check if the client received msg - ACK, if not server resend it when timeout exception is being raised
+        while True:
+            try:
+                # send file size to client
+                self.server_socket_UDP.sendto(binary_msg, (ip, port))
+                ACK, address = self.server_socket_UDP.recvfrom(1024)
+                print(ACK)
+                break
+            except Exception:
+                self.server_socket_UDP.sendto(binary_msg, (ip, port))
+
+    def send_file(self, ip, file_name, port, file_bytes):
+        # <first><download - [:1/2]>nvnvnvn<second><download[1/2:]>jfbvkjsbfl
         with open(file_name, 'rb') as f:
-            print("in send file 1")
-            # check if the client received file size - ACK, if not server resend it again after 10 sec
-            server_socket_UDP.settimeout(100)
-
-            while True:
-                try:
-                    # send file size to client
-                    server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
-                    ACK, address = server_socket_UDP.recvfrom(1024)
-                    print(ACK)
-                    break
-                except Exception as e:
-                    server_socket_UDP.sendto(("<download>" + str(file_bytes)).encode(), (ip, port))
-
+            msg = ("<download>" + str(file_bytes)).encode()
+            self.send_and_ack(msg, ip, port)
             # divide data to chunks
             data = f.read(1024)
             while data:
@@ -176,16 +174,7 @@ class Server:
                 chunk.data = data
                 chunk.checksum = self.checksum(chunk.data)
                 chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
-                flag = True
-                while flag:
-                    flag = False
-                    try:
-                        server_socket_UDP.sendto(chunk_in_binary, (ip, port))
-                        ACK, address = server_socket_UDP.recvfrom(2048)
-                        print(ACK)
-                        break
-                    except Exception as e:
-                        flag = True
+                self.send_and_ack(chunk_in_binary, ip, port)
                 data = f.read(2048)
 
     # Download - UDP
@@ -193,28 +182,39 @@ class Server:
         # turning short name to full name
         for f in self.files:
             if f.__contains__(file_name):
-                file_name=f
+                file_name = f
         # Bytes num of file
-        file_bytes = os.path.getsize(file_name)
+        file_bytes = self.files[file_name][0]
         print("file bytes is: " + str(file_bytes))
         # TODO: CHECK 64 after send to
         # after send file
         if file_bytes >= (1 << 64):
             connection_socket.send('<too_big>'.encode())
             return
-        # opening UDP connection
+        # adding client's name to files list
         clients_name = self.names[port]
-        self.files[file_name].append(clients_name)
-        self.server_socket_UDP.bind(('', self.server_port))
-        self.users[clients_name][3]=self.server_socket_UDP
-        self.server_socket_UDP.sendto("<first>".encode(), (ip, port))
-        self.send_file(self.server_socket_UDP, ip, file_name, port, file_bytes / 2)
+        self.files[file_name][1].append(clients_name)
+
+        # sending the client a signal to enter his receiving file function
+        self.send_and_ack("<first>".encode(), ip, port)
+        # sending client half of the file
+        self.send_file(ip, file_name, port, file_bytes / 2)
 
     # TODO: Check 2 users download file together
     def proceed(self, ip, port):
+        # sending the client a signal to enter his receiving file function
         self.server_socket_UDP.sendto("<second>".encode(), (ip, port))
-        # self.send_file(self.server_socket_UDP, ip, self.file_name, port, self.file_bytes / 2)
-        self.server_socket_UDP.close()
+        file_name = ""
+        clients_name = self.names[port]
+        for file, list_of_users in self.files:
+            if clients_name in list_of_users:
+                file_name = file
+                break
+        # checking if client pressed download before pressing proceed
+        if len(file_name) == 0:
+            self.send_and_ack("<press_download_first>".encode(), ip, port)
+        self.send_file(ip, file_name, port, self.files[file_name][0])
+        # TODO: deleting user name from file list after all file was sent
 
     def actions(self, action, rest_of_msg, port, ip, connection_socket):
         if action == "connect":

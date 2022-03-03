@@ -208,7 +208,11 @@ class Client:
         while True:
             message, serverAddress = self.client_socket_UDP.recvfrom(2048)
             if message:
+                if message.startswith("<press_download_first>".encode()):
+                    print("You can't proceed because you are not downloading anything\n")
                 if message.startswith("<first>".encode()):
+                    # sending server ack on "<first>" msg
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     string_file_size = self.receive_half_file()
                     print("User " + self.name + " downloaded 50% out of file. Last byte is: " + string_file_size)
                     # TODO: implement "Press To Proceed"
