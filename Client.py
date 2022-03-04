@@ -35,7 +35,7 @@ class Client:
             connect_request = "<connect><" + self.name + ">"
             # clientSocket.send(bytes(sentence, encoding="UTF-8"))
             self.client_socket_TCP.send(connect_request.encode())
-            time.sleep(1)
+            time.sleep(2)
             if self.flag:
                 break
         Client.menu(self)
@@ -91,8 +91,8 @@ class Client:
     def is_valid(self, file_name):
         for f in self.dir_files:
             # windows -
-            # if file_name.__contains__(f) and not f.__contains__("/"):
-            if file_name.__contains__(f) and not f.__contains__("\\"):
+            if file_name.__contains__(f) and not f.__contains__("/"):
+                # if file_name.__contains__(f) and not f.__contains__("\\"):
                 return f
         return ''
 
@@ -101,7 +101,7 @@ class Client:
         # Make sure client saw file list
         print("This are your available files:\n")
         self.get_list_file()
-        time.sleep(1)
+        time.sleep(2)
         choose_file = input("Please enter requested file name: ")
         choose_file = self.is_valid(choose_file)
         # invalid name
@@ -166,7 +166,6 @@ class Client:
         while True:
             bytes_read = self.client_socket_UDP.recv(2048)
             data_read = pickle.loads(bytes_read)
-            # print(data_read.data)
             receive_checksum = self.checksum(data_read.data)
             if receive_checksum == data_read.checksum:
                 self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
@@ -264,9 +263,8 @@ class Client:
                             self.dir_files.append(file)
                             print(file + "\n")
                             # windows -
-                            # index1 = file.rfind("/")
-                            index1 = file.rfind("\\")
-
+                            index1 = file.rfind("/")
+                            # index1 = file.rfind("\\")
                             self.dir_files.append(file[index1 + 1:])
                         message = message[index + 2:]
                 elif message.startswith("<too_big>"):
@@ -274,7 +272,7 @@ class Client:
 
     def actions(self):
         while True:
-            time.sleep(1)
+            time.sleep(3)
             client_input = input("Please select action: \n")
             # checking if input is a number
             try:
@@ -289,6 +287,7 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
+    # for clean disconnect
     while client.isAlive:
-        pass
+        continue
     exit(0)

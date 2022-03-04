@@ -153,7 +153,6 @@ class Server:
                 # send file size to client
                 self.server_socket_UDP.sendto(binary_msg, (ip, port))
                 ACK, address = self.server_socket_UDP.recvfrom(1024)
-                print(ACK)
                 break
             except Exception:
                 self.server_socket_UDP.sendto(binary_msg, (ip, port))
@@ -194,7 +193,6 @@ class Server:
         # adding client's name to files list
         clients_name = self.names[port]
         self.files[file_name][1].append(clients_name)
-        print(str(self.files[file_name][1]))
 
         # sending the client a signal to enter his receiving file function
         self.send_and_ack("<first>".encode(), ip, port)
