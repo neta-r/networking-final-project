@@ -170,6 +170,7 @@ class Client:
             try:
                 dec = bytes_read.decode()
                 if dec == "stop":
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     break
             # else - bytes_read are bytes , we need to load them
             except:
@@ -177,8 +178,8 @@ class Client:
                 receive_checksum = self.checksum(data_read.data)
                 if receive_checksum == data_read.checksum:
                     # illustration of 50% packet loss
-                    if count_packets % 2 == 0:
-                        time.sleep(2)
+                    # if count_packets % 2 == 0:
+                    #     time.sleep(2)
                     self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     count_bytes = count_bytes + len(data_read.data)
                     count_packets = count_packets + 1
