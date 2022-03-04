@@ -163,15 +163,25 @@ class Client:
         self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
 
         count_bytes = 0
+        count_packets = 1
         while True:
             bytes_read = self.client_socket_UDP.recv(2048)
-            data_read = pickle.loads(bytes_read)
-            receive_checksum = self.checksum(data_read.data)
-            if receive_checksum == data_read.checksum:
-                self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                count_bytes = count_bytes + len(data_read.data)
-            if count_bytes == file_size:
-                break
+            # trying to decode if bytes_read are string - "stop"
+            try:
+                dec = bytes_read.decode()
+                if dec == "stop":
+                    break
+            # else - bytes_read are bytes , we need to load them
+            except:
+                data_read = pickle.loads(bytes_read)
+                receive_checksum = self.checksum(data_read.data)
+                if receive_checksum == data_read.checksum:
+                    # illustration of 50% packet loss
+                    if count_packets % 2 == 0:
+                        time.sleep(2)
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    count_bytes = count_bytes + len(data_read.data)
+                    count_packets = count_packets + 1
         return file_size
 
     def receive_udp_msgs(self):

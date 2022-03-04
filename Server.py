@@ -13,6 +13,7 @@ class Chunk(object):
     def __init__(self):
         self.checksum = 0
         self.data = ""
+        self.id = 0
 
 
 class Server:
@@ -146,8 +147,9 @@ class Server:
         return digest
 
     def send_and_ack(self, binary_msg, ip, port):
-        self.server_socket_UDP.settimeout(100)
+        self.server_socket_UDP.settimeout(1)
         # check if the client received msg - ACK, if not server resend it when timeout exception is being raised
+        counter = 0
         while True:
             try:
                 # send file size to client
@@ -156,6 +158,7 @@ class Server:
                 break
             except Exception:
                 self.server_socket_UDP.sendto(binary_msg, (ip, port))
+                counter = counter + 1
 
     def send_file(self, ip, file_name, port, file_bytes):
         # <first><file_size - [:1/2]>nvnvnvn<second><file_size[1/2:]>jfbvkjsbfl
@@ -163,6 +166,7 @@ class Server:
             msg = str(file_bytes).encode()
             self.send_and_ack(msg, ip, port)
             left_to_send = file_bytes
+            id = 1
             while left_to_send > 0:
                 if left_to_send > 1024:
                     # divide data to chunks
@@ -174,8 +178,12 @@ class Server:
                 chunk = Chunk()
                 chunk.data = data
                 chunk.checksum = self.checksum(chunk.data)
+                chunk.id = id
+                id = id + 1
                 chunk_in_binary = pickle.dumps(chunk)  # serialize chunk into bytes
                 self.send_and_ack(chunk_in_binary, ip, port)
+            # let client know about the end of transferring packets
+            self.send_and_ack("stop".encode(), ip, port)
 
     # Download - UDP
     def download(self, connection_socket, ip, file_name, port):
@@ -183,8 +191,10 @@ class Server:
         for f in self.files:
             if f.__contains__(file_name):
                 file_name = f
+                break
         # Bytes num of file
         file_bytes = self.files[file_name][0]
+        print(str(file_bytes))
         # 65536 bytes = 64 kb
         # 1024 byte = 1 kb
         if file_bytes >= 65536:
