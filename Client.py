@@ -16,6 +16,7 @@ class Client:
     SERVER_ADDRESS = (server_name, 50000)
     dir_files = []
     flag = False
+    isAlive = True
 
     def __init__(self):
         self.get_port()
@@ -23,7 +24,9 @@ class Client:
         self.t1 = threading.Thread(target=Client.actions, args=(self,))
         self.t2 = threading.Thread(target=Client.receive_msgs, args=(self,))
         self.t3 = threading.Thread(target=Client.receive_udp_msgs, args=(self,))
-
+        self.t1.daemon = True
+        self.t2.daemon = True
+        self.t3.daemon = True
         self.t2.start()
         self.t3.start()
 
@@ -174,126 +177,118 @@ class Client:
 
     def receive_udp_msgs(self):
         while True:
-            try:
-                message, serverAddress = self.client_socket_UDP.recvfrom(2048)
-                if message:
-                    if message.startswith("<press_download_first>".encode()):
-                        print("You can't proceed because you are not downloading anything now\n")
-                    elif message.startswith("<first>".encode()):
-                        # sending server ack on "<first>" msg
-                        self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                        file_size = self.receive_half_file()
-                        print("User " + self.name + " downloaded 50% out of file. Last byte is: " + str(file_size))
-                    elif message.startswith("<second>".encode()):
-                        self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
-                        file_size = self.receive_half_file()
-                        print("User " + self.name + " downloaded 100% out of file. Last byte is: " +
-                              str(file_size * 2))
-            except Exception:
-                exit()
+            message, serverAddress = self.client_socket_UDP.recvfrom(2048)
+            if message:
+                if message.startswith("<press_download_first>".encode()):
+                    print("You can't proceed because you are not downloading anything now\n")
+                elif message.startswith("<first>".encode()):
+                    # sending server ack on "<first>" msg
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 50% out of file. Last byte is: " + str(file_size))
+                elif message.startswith("<second>".encode()):
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
+                    file_size = self.receive_half_file()
+                    print("User " + self.name + " downloaded 100% out of file. Last byte is: " +
+                          str(file_size * 2))
 
     def receive_msgs(self):
         while True:
-            try:
-                buffer = self.client_socket_TCP.recv(1024)
-                if buffer:
-                    message = buffer.decode()
-                    # get users
-                    if message.startswith("<users_lst>"):
-                        message = message[12:]
-                        # server_feedback = "num_of_users><user1><user2>...<end>
+            buffer = self.client_socket_TCP.recv(1024)
+            if buffer:
+                message = buffer.decode()
+                # get users
+                if message.startswith("<users_lst>"):
+                    message = message[12:]
+                    # server_feedback = "num_of_users><user1><user2>...<end>
+                    index = message.find(">")
+                    num_of_usr = message[0:index]
+                    print("Number of users connected: " + num_of_usr + "\nThe users are: ")
+                    message = message[index + 1:]
+                    # server_feedback = "<usr1><usr2>...<end>
+                    stringUser = ""
+                    for _ in range(int(num_of_usr)):
                         index = message.find(">")
-                        num_of_usr = message[0:index]
-                        print("Number of users connected: " + num_of_usr + "\nThe users are: ")
+                        user = message[1:index]
+                        stringUser = stringUser + user + ", "
                         message = message[index + 1:]
-                        # server_feedback = "<usr1><usr2>...<end>
-                        stringUser = ""
-                        for _ in range(int(num_of_usr)):
-                            index = message.find(">")
-                            user = message[1:index]
-                            stringUser = stringUser + user + ", "
-                            message = message[index + 1:]
-                        print(stringUser[0:-2])
+                    print(stringUser[0:-2])
 
-                    # connect to socket
-                    elif message == "<connection_established>":
-                        print("connection established\n")
+                # connect to socket
+                elif message == "<connection_established>":
+                    print("connection established\n")
 
-                    # connected to chat
-                    elif message == "<connected_to_chat>":
-                        self.flag = True
-                        time.sleep(1)
-                        print("Thank you!\n")
+                # connected to chat
+                elif message == "<connected_to_chat>":
+                    self.flag = True
+                    time.sleep(1)
+                    print("Thank you!\n")
 
-                    elif message == "<name_taken>":
-                        self.flag = False
-                        print("name is already taken!\n")
+                elif message == "<name_taken>":
+                    self.flag = False
+                    print("name is already taken!\n")
 
-                    # disconnect
-                    elif message.startswith("<disconnected>"):
-                        print("Successfully disconnected\n")
-                        self.client_socket_TCP.close()
-                        self.client_socket_UDP.close()
-                        self.t1.join()
-                        self.t2.join()
-                        self.t3.join()
-                        exit()
+                # disconnect
+                elif message.startswith("<disconnected>"):
+                    print("Successfully disconnected\n")
+                    self.client_socket_TCP.close()
+                    self.client_socket_UDP.close()
+                    self.isAlive = False
+                    exit()
 
-                    # send message
-                    elif message.startswith("<message_to_yourself>"):
-                        print("You can't send a message to yourself\n")
+                # send message
+                elif message.startswith("<message_to_yourself>"):
+                    print("You can't send a message to yourself\n")
 
-                    elif message.startswith("<invalid_name>"):
-                        print("The name you chose is not in the chatroom!\n")
+                elif message.startswith("<invalid_name>"):
+                    print("The name you chose is not in the chatroom!\n")
 
-                    # show all messages
-                    elif message.startswith("<no_msgs>"):
-                        print("You have no messages yet\n")
+                # show all messages
+                elif message.startswith("<no_msgs>"):
+                    print("You have no messages yet\n")
 
-                    elif message.startswith("<msg>"):
-                        message = message[6:]
+                elif message.startswith("<msg>"):
+                    message = message[6:]
+                    index = message.find(">")
+                    name = message[0:index]
+                    msg = message[index + 2:-1]
+                    print("\n" + name + ": " + msg)
+
+                # list_file
+                elif message.startswith("<file_lst>"):
+                    message = message[11:]
+                    while not message.startswith("end"):
                         index = message.find(">")
-                        name = message[0:index]
-                        msg = message[index + 2:-1]
-                        print("\n" + name + ": " + msg)
+                        file = message[0:index]
+                        if file not in self.dir_files:
+                            self.dir_files.append(file)
+                            print(file + "\n")
+                            # windows -
+                            # index1 = file.rfind("/")
+                            index1 = file.rfind("\\")
 
-                    # list_file
-                    elif message.startswith("<file_lst>"):
-                        message = message[11:]
-                        while not message.startswith("end"):
-                            index = message.find(">")
-                            file = message[0:index]
-                            if file not in self.dir_files:
-                                self.dir_files.append(file)
-                                print(file + "\n")
-                                # windows -
-                                # index1 = file.rfind("/")
-                                index1 = file.rfind("\\")
-
-                                self.dir_files.append(file[index1 + 1:])
-                            message = message[index + 2:]
-                    elif message.startswith("<too_big>"):
-                        print("The chosen file bis too large\n")
-            except Exception:
-                exit()
+                            self.dir_files.append(file[index1 + 1:])
+                        message = message[index + 2:]
+                elif message.startswith("<too_big>"):
+                    print("The chosen file bis too large\n")
 
     def actions(self):
         while True:
             time.sleep(1)
+            client_input = input("Please select action: \n")
+            # checking if input is a number
             try:
-                client_input = input("Please select action: \n")
-                # checking if input is a number
-                try:
-                    action = int(client_input)
-                    if int(action) < 1 or int(action) > 7:
-                        print("Please choose number between 1 to 7\n")
-                    else:
-                        Client.switcher(self, action)
-                except ValueError:
-                    print("Please enter numeric value!\n")
-            except Exception:
-                exit()
+                action = int(client_input)
+                if int(action) < 1 or int(action) > 7:
+                    print("Please choose number between 1 to 7\n")
+                else:
+                    Client.switcher(self, action)
+            except ValueError:
+                print("Please enter numeric value!\n")
 
 
 if __name__ == '__main__':
     client = Client()
+    while client.isAlive:
+        pass
+    exit(0)
