@@ -239,7 +239,6 @@ class Server:
         elif action == "set_msg":
             Server.set_msg(self, rest_of_msg, port, ip, connection_socket)
         elif action == "set_msg_all":
-            print(connection_socket)
             Server.set_msg_all(self, rest_of_msg, port, connection_socket)
         elif action == "get_list_file":
             Server.get_list_file(self, connection_socket)
