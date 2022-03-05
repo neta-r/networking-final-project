@@ -17,5 +17,14 @@ class test_client(unittest.TestCase):
         t1 = threading.Thread(target=create_server)
         t1.daemon = True
         t1.start()
-        with mock.patch('builtins.input', side_effect=['55001', 'amit', 2]):
-            client = Client()
+
+        try:
+            with mock.patch('builtins.input', side_effect=['55006', 'amit', '2']):
+                client = Client()
+                while True:
+                    if client.isAlive:
+                        continue
+                    else:
+                        break
+        except Exception:
+            exit()

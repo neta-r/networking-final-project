@@ -282,6 +282,8 @@ class Client:
                     print("The chosen file bis too large\n")
 
     def actions(self):
+        print("entered actions\n")
+        time.sleep(3)
         while True:
             time.sleep(3)
             client_input = input("Please select action: \n")
