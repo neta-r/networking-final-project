@@ -220,6 +220,7 @@ class Server:
         # checking if client pressed download before pressing proceed
         if len(file_name) == 0:
             self.send_and_ack("<press_download_first>".encode(), ip, port)
+            return
 
         file_bytes = self.files[file_name][0]
 

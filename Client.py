@@ -193,6 +193,7 @@ class Client:
             message, serverAddress = self.client_socket_UDP.recvfrom(2048)
             if message:
                 if message.startswith("<press_download_first>".encode()):
+                    self.client_socket_UDP.sendto("ACK".encode(), serverAddress)
                     self.print_and_output("You can't proceed because you are not downloading anything now\n")
                 elif message.startswith("<first>".encode()):
                     # sending server ack on "<first>" msg
